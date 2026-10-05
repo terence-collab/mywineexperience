@@ -13,7 +13,7 @@ Production is currently running from the `wine-experience-b8864` Firebase projec
 - [x] Create Cloud Storage and choose a matching region where possible.
 - [x] Add localhost, preview, and production domains to Firebase Auth authorized domains.
 - [x] Deploy `firestore.rules`, `firestore.indexes.json`, and `storage.rules`.
-- [ ] Test the rules against emulator data before using production data.
+- [x] Test the rules against emulator data before using production data. (`npm run test:rules`)
 
 ## Google Cloud / Maps
 

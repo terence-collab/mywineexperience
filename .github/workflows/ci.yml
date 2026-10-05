@@ -30,6 +30,8 @@ jobs:
         run: npm run lint
       - name: Build and test
         run: npm test
+      - name: Test Firebase rules in emulators
+        run: npm run test:rules
       - name: Install Functions dependencies
         run: npm ci
         working-directory: functions
