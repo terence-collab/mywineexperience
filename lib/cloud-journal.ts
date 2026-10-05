@@ -199,6 +199,9 @@ export function subscribeExperiences(
 export async function deleteExperience(userId: string, experienceId: string) {
   const firestore = requireDb();
   const experienceRef = doc(firestore, "users", userId, "experiences", experienceId);
+  // Remove Storage objects first. If this fails, keep the Firestore record so
+  // the user can retry instead of leaving an apparently deleted orphan.
+  await deleteExperienceMedia(userId, experienceId);
   const wines = await getDocs(collection(experienceRef, "wines"));
   const jobs = await getDocs(query(collection(firestore, "users", userId, "processingJobs"), where("experienceId", "==", experienceId)));
   const batch = writeBatch(firestore);
@@ -210,7 +213,6 @@ export async function deleteExperience(userId: string, experienceId: string) {
   jobs.docs.forEach((job) => batch.delete(job.ref));
   batch.delete(experienceRef);
   await batch.commit();
-  await deleteExperienceMedia(userId, experienceId);
 }
 
 export function toCloudStatus(status: string): CloudWine["status"] {

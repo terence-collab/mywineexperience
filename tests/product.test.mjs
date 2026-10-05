@@ -70,6 +70,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("lib/cloud-journal.ts"), /where\("experienceId"/);
   assert.match(await read("lib/cloud-journal.ts"), /subscribeExperiences/);
   assert.match(await read("lib/cloud-journal.ts"), /onSnapshot/);
+  assert.match(await read("lib/cloud-journal.ts"), /Remove Storage objects first/);
   assert.match(await read("lib/cloud-media.ts"), /item\.userId === userId/);
   assert.match(await read("lib/cloud-media.ts"), /ensureEnrichmentJob/);
   assert.match(await read("lib/cloud-media.ts"), /otherPendingMedia/);

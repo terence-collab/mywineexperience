@@ -615,6 +615,7 @@ export default function Home() {
   const [selectedWinePhotoUrl, setSelectedWinePhotoUrl] = useState<string>();
   const [selectedExperiencePhotoUrl, setSelectedExperiencePhotoUrl] = useState<string>();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string>();
+  const [deleteError, setDeleteError] = useState<string>();
   const [reflectionWineId, setReflectionWineId] = useState<number>();
   const [reflectionText, setReflectionText] = useState("");
   const [reflectionReaction, setReflectionReaction] = useState<Reaction>();
@@ -1072,15 +1073,19 @@ export default function Home() {
       blob: file,
     });
   }
-  function removeExperience(summary: ExperienceSummary) {
-    setExperiences((current) =>
-      current.filter((item) => item.id !== summary.id),
-    );
-    void removeQueuedMediaForExperience(summary.id);
+  async function removeExperience(summary: ExperienceSummary) {
+    setDeleteError(undefined);
     const uid = auth?.currentUser?.uid;
-    if (uid && firebaseEnabled)
-      void deleteCloudExperience(uid, summary.id).catch(() => undefined);
+    try {
+      if (uid && firebaseEnabled) await deleteCloudExperience(uid, summary.id);
+      await removeQueuedMediaForExperience(summary.id);
+    } catch {
+      setDeleteError("We could not remove everything yet. Check your connection and try again.");
+      return;
+    }
+    setExperiences((current) => current.filter((item) => item.id !== summary.id));
     setSelectedExperience(undefined);
+    setConfirmDeleteId(undefined);
   }
   return (
     <main className="app-shell">
@@ -1567,7 +1572,8 @@ export default function Home() {
             {confirmDeleteId === selectedExperience.id ? (
               <div className="delete-confirmation">
                 <p className="muted">This removes the experience, its wines, reflections, and stored media.</p>
-                <button className="danger-button" onClick={() => { removeExperience(selectedExperience); setConfirmDeleteId(undefined); }}>Confirm delete</button>
+                {deleteError && <p className="form-message">{deleteError}</p>}
+                <button className="danger-button" onClick={() => void removeExperience(selectedExperience)}>Confirm delete</button>
                 <button className="text-button" onClick={() => setConfirmDeleteId(undefined)}>Keep experience</button>
               </div>
             ) : (
