@@ -110,7 +110,7 @@ export const processEnrichmentJob = onDocumentCreated(
         body: JSON.stringify({ transcriptHint: wine.name, media }),
       });
       if (!response.ok) throw new Error(`Enrichment endpoint returned ${response.status}.`);
-      const payload = await response.json() as { extraction?: Extraction };
+      const payload = await response.json() as { extraction?: Extraction; model?: string };
       const extraction = payload.extraction;
       if (!extraction) throw new Error("Enrichment endpoint returned no extraction.");
 
@@ -124,7 +124,8 @@ export const processEnrichmentJob = onDocumentCreated(
           varietal: extraction.varietal || "",
           vintage: extraction.vintage || "",
           evidence: extraction.evidence ?? [],
-          model: payload.extraction ? "gemini" : "unknown",
+          model: payload.model ?? "unknown",
+          extractionVersion: "wine-extraction-v1",
         },
         suggestionStatus: "suggested",
         updatedAt: Timestamp.now(),

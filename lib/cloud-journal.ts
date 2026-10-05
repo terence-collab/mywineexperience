@@ -52,6 +52,7 @@ export type CloudWine = {
     vintage?: string;
     evidence?: string[];
     model?: string;
+    extractionVersion?: string;
   };
   suggestionStatus?: "suggested" | "confirmed" | "deferred";
   retainAudio?: boolean;

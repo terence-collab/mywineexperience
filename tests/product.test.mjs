@@ -92,6 +92,8 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("lib/cloud-journal.ts"), /subscribeExperiences/);
   assert.match(await read("lib/cloud-journal.ts"), /error\?: string/);
   assert.match(await read("lib/cloud-journal.ts"), /retryEnrichmentJob/);
+  assert.match(await read("functions/src/index.ts"), /payload\.model/);
+  assert.match(await read("functions/src/index.ts"), /extractionVersion/);
   assert.match(await read("lib/cloud-journal.ts"), /onSnapshot/);
   assert.match(await read("lib/cloud-journal.ts"), /Remove Storage objects first/);
   assert.match(await read("lib/cloud-media.ts"), /item\.userId === userId/);
