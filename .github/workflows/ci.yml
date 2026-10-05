@@ -2,8 +2,11 @@ name: Verify
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
+
+permissions:
+  contents: read
 
 concurrency:
   group: verify-${{ github.workflow }}-${{ github.ref }}

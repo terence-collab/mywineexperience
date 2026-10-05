@@ -75,7 +75,7 @@ npx next build
 
 The supported local production check is `npx next build`. The starter's Vinext/Cloudflare wrapper may not run on every host architecture because its `workerd` binary is platform-specific.
 
-GitHub Actions runs the same lint and build/test checks on pushes to `main` and pull requests. The repository also includes a pull-request checklist covering screenshots, privacy, Firebase rules, indexes, and environment changes.
+GitHub Actions runs the same lint and build/test checks on pushes to `master` and pull requests. The repository also includes a pull-request checklist covering screenshots, privacy, Firebase rules, indexes, and environment changes.
 
 ## Important routes
 
