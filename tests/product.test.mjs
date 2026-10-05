@@ -8,6 +8,7 @@ const read = (file) => readFile(new URL(file, root), "utf8");
 test("product surface contains the core tasting loop", async () => {
   const page = await read("app/page.tsx");
   assert.match(page, /Start tasting/);
+  assert.match(page, /Change farm/);
   assert.match(page, /Record the host/);
   assert.match(page, /Make sure people are comfortable being recorded/);
   assert.match(page, /Photograph the bottle/);
@@ -98,6 +99,8 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("functions/src/index.ts"), /confirmedName/);
   assert.match(enrich, /evidenceSources/);
   assert.match(enrich, /farmName/);
+  assert.match(enrich, /enrichment_started/);
+  assert.match(enrich, /enrichment_completed/);
   assert.match(firestore, /confirmedName/);
   assert.match(await read("lib/cloud-journal.ts"), /onSnapshot/);
   assert.match(await read("lib/cloud-journal.ts"), /Remove Storage objects first/);

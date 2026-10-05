@@ -42,6 +42,7 @@ export async function POST(request: Request) {
   const media = (body.media ?? []).filter((item) => item?.data && item?.mimeType).slice(0, 3);
   const totalBytes = media.reduce((sum, item) => sum + Math.ceil(item.data.length * 0.75), 0);
   if (totalBytes > maxInlineBytes) return NextResponse.json({ error: "Inline media exceeds the 20 MB limit; upload it through the Files API first." }, { status: 413 });
+  console.info("wine_experience_event", "enrichment_started", { provider: "gemini", mediaCount: media.length });
 
   const input = [
     { type: "text", text: [
@@ -59,8 +60,17 @@ export async function POST(request: Request) {
     headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({ model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash", input, response_format: { type: "text", mime_type: "application/json", schema: wineSchema } }),
   });
-  if (!response.ok) return NextResponse.json({ error: "Gemini enrichment failed.", providerStatus: response.status }, { status: 502 });
+  if (!response.ok) {
+    console.info("wine_experience_event", "enrichment_failed", { provider: "gemini", providerStatus: response.status });
+    return NextResponse.json({ error: "Gemini enrichment failed.", providerStatus: response.status }, { status: 502 });
+  }
   const result = await response.json() as { output_text?: string };
-  try { return NextResponse.json({ extraction: JSON.parse(result.output_text ?? "{}"), model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash", extractionVersion }); }
-  catch { return NextResponse.json({ error: "Gemini returned an invalid structured response." }, { status: 502 }); }
+  try {
+    const model = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
+    console.info("wine_experience_event", "enrichment_completed", { provider: "gemini", model, extractionVersion });
+    return NextResponse.json({ extraction: JSON.parse(result.output_text ?? "{}"), model, extractionVersion });
+  } catch {
+    console.info("wine_experience_event", "enrichment_failed", { provider: "gemini", reason: "invalid_structured_response" });
+    return NextResponse.json({ error: "Gemini returned an invalid structured response." }, { status: 502 });
+  }
 }

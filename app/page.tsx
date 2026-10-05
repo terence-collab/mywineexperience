@@ -1541,7 +1541,9 @@ export default function Home() {
                 <strong>{selectedFarm.name}</strong>
                 <p>{selectedFarm.town}, Western Cape</p>
               </div>
+              <button onClick={() => setStartOpen(false)}>Change farm</button>
             </div>
+            <p className="reassurance">You can add the details as you go.</p>
             <button className="primary-button" onClick={begin}>
               Start tasting <Icon name="arrow" />
             </button>

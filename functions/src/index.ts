@@ -166,6 +166,7 @@ export const processEnrichmentJob = onDocumentCreated(
     } catch (error) {
       const message = errorMessage(error);
       const terminal = attempt >= maxAttempts;
+      console.info("wine_experience_event", "enrichment_failed", { attempt, terminal, reason: terminal ? "terminal_failure" : "retryable_failure" });
       await wineRef.set({ status: terminal ? "error" : "waiting_upload", error: message, updatedAt: Timestamp.now() }, { merge: true });
       await snapshot.ref.set({ status: terminal ? "error" : "queued", error: message, updatedAt: Timestamp.now() }, { merge: true });
       if (!terminal) throw error;
