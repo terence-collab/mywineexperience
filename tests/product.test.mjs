@@ -63,6 +63,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
   assert.match(await read("lib/auth.ts"), /GoogleAuthProvider/);
   assert.match(await read("app/page.tsx"), /Continue with Google/);
+  assert.doesNotMatch(await read("app/globals.css"), /#4285f4|#2563eb|#3b82f6/i);
   assert.doesNotMatch(await read("lib/auth.ts"), /signInWithApple/);
   assert.match(await read("app/register-service-worker.tsx"), /serviceWorker.register/);
   const manifest = await read("app/manifest.ts");
