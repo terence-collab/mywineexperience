@@ -9,6 +9,7 @@ test("product surface contains the core tasting loop", async () => {
   const page = await read("app/page.tsx");
   assert.match(page, /Start tasting/);
   assert.match(page, /Record the host/);
+  assert.match(page, /Make sure people are comfortable being recorded/);
   assert.match(page, /Photograph the bottle/);
   assert.match(page, /Loved it/);
   assert.match(page, /Liked it/);

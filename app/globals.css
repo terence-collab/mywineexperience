@@ -62,3 +62,4 @@ button,input { font:inherit; } button { cursor:pointer; } svg { width:20px; heig
 .experience-photo { width:100%; max-height:220px; object-fit:cover; margin:10px 0 18px; background:#eee9df; }
 .detail-map-link { display:inline-flex; align-items:center; gap:7px; color:var(--wine); font-size:12px; margin:4px 0 12px; }.detail-map-link svg { width:15px; }
 .suggestion-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }.suggestion-actions .primary-button { width:auto; flex:1 1 180px; }.suggestion-confirmed { color:var(--wine); font-size:12px; font-weight:600; }
+.reaction-chip.neutral { color:var(--muted); background:#eee9df; }

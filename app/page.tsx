@@ -1171,7 +1171,11 @@ export default function Home() {
       wineId: "experience",
       kind: "photo",
       blob: file,
-    });
+    }).then(() => {
+      const uid = auth?.currentUser?.uid;
+      if (uid) return uploadQueuedMedia(uid);
+      return undefined;
+    }).catch(() => undefined);
   }
   async function removeExperience(summary: ExperienceSummary) {
     setDeleteError(undefined);
@@ -1644,7 +1648,7 @@ export default function Home() {
                     aria-label="Correct wine name"
                   />
                 ) : <strong>{wine.name}</strong>}
-                <span className="reaction-chip loved">{wine.reaction}</span>
+                <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{wine.reaction}</span>
                 <button className="text-button" onClick={() => { setSelectedWine(wine); setSelectedWineExperienceId(selectedExperience.id); }}>Open wine</button>
                 {editingWineId === wine.id ? (
                   <button className="text-button" onClick={saveWineName}>Save name</button>
