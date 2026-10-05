@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "test": "npx next build && node --test tests/product.test.mjs",
-    "test:rules": "firebase emulators:exec --only firestore,storage \"node --test tests/firebase-rules.test.mjs\"",
+    "test:rules": "npx -y firebase-tools@latest emulators:exec --only firestore,storage \"node --test tests/firebase-rules.test.mjs\"",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern functions/lib --ignore-pattern functions/node_modules",
     "check:env": "node scripts/check-env.mjs",
     "check:env:strict": "node scripts/check-env.mjs --strict",
