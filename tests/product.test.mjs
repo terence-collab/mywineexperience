@@ -63,6 +63,10 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
   assert.doesNotMatch(await read("lib/auth.ts"), /signInWithApple/);
   assert.match(await read("app/register-service-worker.tsx"), /serviceWorker.register/);
+  const manifest = await read("app/manifest.ts");
+  assert.match(manifest, /display: "standalone"/);
+  assert.match(manifest, /start_url: "\/"/);
+  assert.match(await read("public/service-worker.js"), /CACHE_NAME/);
 });
 
 test("cloud boundaries and privacy artifacts are present", async () => {
