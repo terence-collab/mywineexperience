@@ -14,6 +14,7 @@ import {
 import { auth, firebaseEnabled } from "../lib/firebase";
 import {
   deleteExperience as deleteCloudExperience,
+  retryEnrichmentJob,
   saveExperience as saveCloudExperience,
   saveReflection as saveCloudReflection,
   saveWine as saveCloudWine,
@@ -618,6 +619,7 @@ export default function Home() {
   const [selectedExperiencePhotoUrl, setSelectedExperiencePhotoUrl] = useState<string>();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string>();
   const [deleteError, setDeleteError] = useState<string>();
+  const [retryError, setRetryError] = useState<string>();
   const [reflectionWineId, setReflectionWineId] = useState<number>();
   const [reflectionText, setReflectionText] = useState("");
   const [reflectionReaction, setReflectionReaction] = useState<Reaction>();
@@ -1087,6 +1089,19 @@ export default function Home() {
         suggestionStatus: status,
         createdAt: Date.now(),
       }).catch(() => undefined);
+  }
+  async function retrySelectedWineEnrichment() {
+    const uid = auth?.currentUser?.uid;
+    if (!uid || !selectedWine || !selectedWineExperienceId) return;
+    const wine = selectedWine;
+    setRetryError(undefined);
+    setSelectedWine({ ...wine, status: "processing", error: undefined });
+    try {
+      await retryEnrichmentJob(uid, selectedWineExperienceId, String(wine.id));
+    } catch {
+      setSelectedWine({ ...wine, status: "error" });
+      setRetryError("We could not queue another attempt. Check your connection and try again.");
+    }
   }
   function editSelectedWineName() {
     if (!selectedWine || !selectedWineExperienceId) return;
@@ -1672,7 +1687,11 @@ export default function Home() {
               <p className="eyebrow">SOURCE MEMORY</p>
               <p className="muted">{selectedWine.photoPath ? "Label photo available" : selectedWine.photo ? "Label photo saved" : "No label photo saved"} · {selectedWine.audioPath ? "Voice note available" : selectedWine.audio ? "Voice note queued" : "No voice note saved"}</p>
               <p className="muted">Status: {selectedWine.status}</p>
-              {selectedWine.error && <p className="form-message">We could not organise this capture yet. You can retry the media upload from Profile. ({selectedWine.error})</p>}
+              {selectedWine.error && <>
+                <p className="form-message">We could not organise this capture yet. You can retry the organiser or retry media uploads from Profile.</p>
+                <button className="text-button" onClick={() => void retrySelectedWineEnrichment()}>Retry organisation <Icon name="arrow" /></button>
+                {retryError && <p className="form-message">{retryError}</p>}
+              </>}
               {selectedWinePhotoUrl && <img className="detail-photo" src={selectedWinePhotoUrl} alt={`Label photo for ${selectedWine.name}`} />}
               {selectedWineAudioUrl && <audio className="audio-player" controls preload="metadata" src={selectedWineAudioUrl} />}
             </div>

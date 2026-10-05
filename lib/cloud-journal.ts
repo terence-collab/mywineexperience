@@ -1,6 +1,8 @@
 import {
   collection,
+  deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -113,6 +115,36 @@ export async function saveEnrichmentJob(job: CloudEnrichmentJob) {
   const firestore = requireDb();
   const jobRef = doc(collection(doc(firestore, "users", job.userId), "processingJobs"), job.id);
   await setDoc(jobRef, stripUndefined({ ...job, updatedAt: serverTimestamp() }), { merge: true });
+}
+
+export async function retryEnrichmentJob(userId: string, experienceId: string, wineId: string) {
+  const firestore = requireDb();
+  const jobRef = doc(firestore, "users", userId, "processingJobs", `${experienceId}-${wineId}`);
+  const jobSnapshot = await getDoc(jobRef);
+  if (!jobSnapshot.exists() || jobSnapshot.data().status !== "error") {
+    throw new Error("This capture is not ready to retry yet.");
+  }
+  const wineRef = doc(firestore, "users", userId, "experiences", experienceId, "wines", wineId);
+  const wineSnapshot = await getDoc(wineRef);
+  if (!wineSnapshot.exists()) throw new Error("The wine capture no longer exists.");
+  const wine = wineSnapshot.data() as Pick<CloudWine, "audioPath" | "photoPath">;
+  const mediaKinds = [
+    ...(wine.audioPath ? ["audio" as const] : []),
+    ...(wine.photoPath ? ["photo" as const] : []),
+  ];
+  if (!mediaKinds.length) throw new Error("No uploaded media is available to retry.");
+  await deleteDoc(jobRef);
+  await setDoc(jobRef, {
+    id: `${experienceId}-${wineId}`,
+    userId,
+    experienceId,
+    wineId,
+    mediaKinds,
+    status: "queued",
+    attempts: 0,
+    createdAt: Date.now(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export async function listExperiences(userId: string) {
