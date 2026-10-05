@@ -481,7 +481,6 @@ function AccountAccess() {
   const [user, setUser] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   useEffect(() => {
-    void completePasswordlessSignIn().catch(() => undefined);
     return observeUser((next) => setUser(next?.email ?? null));
   }, []);
   if (!firebaseEnabled)
@@ -687,6 +686,11 @@ export default function Home() {
     return [...groups.entries()].sort(([first], [second]) => second.localeCompare(first));
   }, [visibleExperiences]);
   const selectedFarmHistory = farmHistory.get(selectedFarm.name);
+  useEffect(() => {
+    // Complete magic-link sign-in at the app shell so returning users do not
+    // need to open Profile before Firebase can restore their account.
+    void completePasswordlessSignIn().catch(() => undefined);
+  }, []);
   useEffect(() => observeUser((user) => {
     if (user) migrateDeviceJournalToAccount(user.uid);
     setAuthUserId(user?.uid ?? "device");
