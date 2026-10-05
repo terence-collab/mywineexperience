@@ -23,7 +23,7 @@ Production is currently running from the `wine-experience-b8864` Firebase projec
 - [x] Enable Places API (New).
 - [x] Use the existing restricted server-side Maps key for Wine Experience.
 - [x] Add Places API (New) to that key's API restrictions.
-- [ ] Confirm quota alerts and budget alerts.
+- [x] Confirm quota alerts and budget alerts. *(Owner confirmed configured.)*
 
 ## Gemini
 
@@ -58,7 +58,7 @@ npm run check:env:strict
 
 Use [the detailed pilot script](./PILOT_TEST_SCRIPT.md) and a staging Firebase project before production.
 
-- [ ] Sign in on a real Android phone.
+- [ ] Sign in to the PWA in a mobile browser on Android.
 - [ ] Start a tasting with no network.
 - [ ] Capture three wines with reactions, including one photo and one recording.
 - [ ] End the experience offline and reconnect later.
@@ -68,3 +68,5 @@ Use [the detailed pilot script](./PILOT_TEST_SCRIPT.md) and a staging Firebase p
 - [ ] Add an at-home reflection and correct a wine name.
 - [ ] Export the journal.
 - [ ] Delete an experience and verify its nested records and media are removed.
+
+The pilot validates the responsive PWA in mobile browsers; native Android and iOS apps are not part of this release.

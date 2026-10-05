@@ -37,9 +37,9 @@ Official instructions:
 
 Also review API quotas for Places and Gemini and set conservative per-minute/day limits appropriate for a personal pilot. Record the chosen limits in the pilot notes.
 
-## 3. Run the real-device pilot
+## 3. Run the PWA browser pilot
 
-Use `docs/PILOT_TEST_SCRIPT.md` and record the device, browser, commit, environment, and pass/fail result. The pilot is not complete until both Android and iPhone pass the core flow without data loss.
+Use `docs/PILOT_TEST_SCRIPT.md` and record the device, mobile browser, commit, environment, and pass/fail result. This validates the responsive PWA in mobile browsers; native Android and iOS apps are not part of this release.
 
 At minimum verify:
 
@@ -54,4 +54,4 @@ At minimum verify:
 
 ## Current boundary
 
-Local code, production deployment, production Firebase services, rules tests, CI, Maps search, and protected enrichment are verified. Staging creation, billing configuration, and physical-device behavior remain intentionally unchecked until the external steps above are completed.
+Local code, production deployment, production Firebase services, rules tests, CI, Maps search, protected enrichment, and the owner-confirmed billing alerts are verified. Staging creation and PWA mobile-browser behavior remain intentionally unchecked until the external steps above are completed.

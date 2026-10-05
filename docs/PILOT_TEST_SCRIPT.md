@@ -48,4 +48,4 @@ Expected result: retrying is safe and does not create duplicate wines or duplica
 
 ## Acceptance record
 
-Record: device/browser, test account, commit/preview URL, Firebase project, pass/fail per section, screenshots of any failure, and whether the failure is reproducible offline, online, or only on one mobile browser. A pilot is not accepted until both Android and iPhone complete the core flow without data loss.
+Record: device/browser, test account, commit/preview URL, Firebase project, pass/fail per section, screenshots of any failure, and whether the failure is reproducible offline, online, or only on one mobile browser. This is a PWA browser pilot, not a native Android or iOS app test; acceptance requires the core flow to complete without data loss on the target mobile browsers.
