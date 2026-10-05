@@ -152,6 +152,55 @@ function migrateDeviceJournalToAccount(userId: string) {
   }
 }
 
+async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSummary[]) {
+  await Promise.all(items.map(async (experience) => {
+    await saveCloudExperience({
+      id: experience.id,
+      userId,
+      farmId: experience.farmName.toLowerCase().replaceAll(" ", "-"),
+      farmName: experience.farmName,
+      farmTown: experience.town,
+      startedAt: Date.parse(experience.startedAt),
+      status: "completed",
+      wineCount: experience.wineCount,
+      overallRating: experience.rating,
+      note: experience.note,
+      location: experience.location,
+      photoPath: experience.photoPath,
+    });
+
+    await Promise.all((experience.wines ?? [])
+      .filter((wine): wine is Wine & { reaction: Reaction } => Boolean(wine.reaction))
+      .flatMap((wine) => [
+        saveCloudWine({
+          id: String(wine.id),
+          userId,
+          experienceId: experience.id,
+          name: wine.name,
+          reaction: wine.reaction,
+          status: toCloudStatus(wine.status),
+          audioPath: wine.audioPath,
+          photoPath: wine.photoPath,
+          transcript: wine.transcript,
+          summary: wine.summary,
+          suggestedIdentity: wine.suggestedIdentity,
+          suggestionStatus: wine.suggestionStatus,
+          createdAt: Date.parse(experience.startedAt),
+        }),
+        ...(wine.reflections ?? []).map((reflection) => saveCloudReflection({
+          id: reflection.id,
+          userId,
+          experienceId: experience.id,
+          wineId: String(wine.id),
+          type: reflection.type,
+          note: reflection.note,
+          reaction: reflection.reaction,
+          createdAt: Date.parse(reflection.createdAt),
+        })),
+      ]));
+  }));
+}
+
 function Icon({ name }: { name: string }) {
   const paths: Record<string, string> = {
     map: "M3 6l6-3 6 3 6-3v18l-6 3-6-3-6 3V6zm6-3v18m6-15v18",
@@ -588,6 +637,7 @@ export default function Home() {
   const [isOnline, setIsOnline] = useState(true);
   const [mediaQueue, setMediaQueue] = useState({ waiting: 0, failed: 0, unassigned: 0 });
   const [authUserId, setAuthUserId] = useState("device");
+  const syncedCloudAccounts = useRef(new Set<string>());
   const storageKey = `my-wine-experience:${authUserId}`;
   const historyFarms = useMemo(() => experiences
     .filter((experience) => !farms.some((farm) => farm.name.toLowerCase() === experience.farmName.toLowerCase()))
@@ -767,8 +817,19 @@ export default function Home() {
               return [...cloudItems, ...current.filter((item) => !cloudIds.has(item.id))];
             }),
           )
-          .catch(() => undefined);
+           .catch(() => undefined);
   }, [authUserId]);
+  useEffect(() => {
+    if (!hydrated || authUserId === "device" || !firebaseEnabled || !experiences.length || syncedCloudAccounts.current.has(authUserId)) return;
+    syncedCloudAccounts.current.add(authUserId);
+    void (async () => {
+      await claimUnassignedMedia(authUserId);
+      await syncLocalExperiencesToCloud(authUserId, experiences);
+      await uploadQueuedMedia(authUserId);
+    })().catch(() => {
+      syncedCloudAccounts.current.delete(authUserId);
+    });
+  }, [authUserId, experiences, hydrated]);
   useEffect(() => {
     const sync = () => {
       const userId = auth?.currentUser?.uid;

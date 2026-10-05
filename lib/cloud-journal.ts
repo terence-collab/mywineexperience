@@ -85,13 +85,13 @@ function requireDb() {
 export async function saveExperience(experience: CloudExperience) {
   const firestore = requireDb();
   const ref = doc(firestore, "users", experience.userId, "experiences", experience.id);
-  await setDoc(ref, { ...experience, updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(ref, stripUndefined({ ...experience, updatedAt: serverTimestamp() }), { merge: true });
 }
 
 export async function saveWine(wine: CloudWine) {
   const firestore = requireDb();
   const ref = doc(collection(doc(firestore, "users", wine.userId, "experiences", wine.experienceId), "wines"), wine.id);
-  await setDoc(ref, { ...wine, updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(ref, stripUndefined({ ...wine, updatedAt: serverTimestamp() }), { merge: true });
 }
 
 export async function saveReflection(reflection: CloudReflection) {
@@ -104,13 +104,13 @@ export async function saveReflection(reflection: CloudReflection) {
     reflection.wineId,
   );
   const reflectionRef = doc(collection(wineRef, "reflections"), reflection.id);
-  await setDoc(reflectionRef, { ...reflection, updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(reflectionRef, stripUndefined({ ...reflection, updatedAt: serverTimestamp() }), { merge: true });
 }
 
 export async function saveEnrichmentJob(job: CloudEnrichmentJob) {
   const firestore = requireDb();
   const jobRef = doc(collection(doc(firestore, "users", job.userId), "processingJobs"), job.id);
-  await setDoc(jobRef, { ...job, updatedAt: serverTimestamp() }, { merge: true });
+  await setDoc(jobRef, stripUndefined({ ...job, updatedAt: serverTimestamp() }), { merge: true });
 }
 
 export async function listExperiences(userId: string) {
