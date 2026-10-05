@@ -21,6 +21,8 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /passwordless email link/);
   assert.match(page, /Complete magic-link sign-in at the app shell/);
   assert.match(page, /Add at-home reflection/);
+  assert.match(page, /Add a note/);
+  assert.match(page, /YOUR NOTE/);
   assert.match(page, /Export your journal/);
   assert.match(page, /queuedMedia/);
   assert.match(page, /Edit name/);
@@ -73,6 +75,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(firestore, /validRating/);
   assert.match(firestore, /validExperience/);
   assert.match(firestore, /validWine/);
+  assert.match(firestore, /data.note.size\(\) <= 2000/);
   assert.match(firestore, /wineCount <= 7/);
   assert.match(storage, /request\.resource\.contentType/);
   assert.match(manifest, /My Wine Experience/);

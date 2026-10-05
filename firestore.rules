@@ -21,6 +21,7 @@ service cloud.firestore {
         && data.experienceId == experienceId
         && data.name is string
         && data.name.size() <= 200
+        && (!('note' in data) || (data.note is string && data.note.size() <= 2000))
         && validReaction(data.reaction)
         && (data.status == 'draft' || data.status == 'waiting_upload' || data.status == 'processing' || data.status == 'ready' || data.status == 'error');
     }

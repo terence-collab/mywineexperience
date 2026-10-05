@@ -33,6 +33,7 @@ type Wine = {
   id: number;
   name: string;
   detail: string;
+  note?: string;
   reaction?: Reaction;
   status: string;
   error?: string;
@@ -179,6 +180,7 @@ async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSumm
           userId,
           experienceId: experience.id,
           name: wine.name,
+          note: wine.note,
           reaction: wine.reaction,
           status: toCloudStatus(wine.status),
           audioPath: wine.audioPath,
@@ -251,6 +253,8 @@ function CaptureSheet({
 }) {
   const [reaction, setReaction] = useState<Reaction | undefined>(draft?.reaction);
   const [name, setName] = useState(draft?.name === "New wine" ? "" : draft?.name ?? "");
+  const [note, setNote] = useState(draft?.note ?? "");
+  const [noteOpen, setNoteOpen] = useState(Boolean(draft?.note));
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [audioCaptured, setAudioCaptured] = useState(Boolean(draft?.audio));
@@ -333,8 +337,9 @@ function CaptureSheet({
         blob: photoFile,
       });
     onSave({
-       id: wineId,
+      id: wineId,
       name: name.trim() || "New wine",
+      note: note.trim() || undefined,
        detail: `${audioCaptured ? "Voice note" : "Quick capture"}${photo || photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Waiting to upload",
@@ -351,6 +356,7 @@ function CaptureSheet({
     onSaveDraft({
       id: draft?.id ?? wines.length + 1,
       name: name.trim() || "New wine",
+      note: note.trim() || undefined,
       detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Draft",
@@ -462,6 +468,10 @@ function CaptureSheet({
             ),
           )}
         </div>
+        <button className="text-button wine-note-toggle" type="button" onClick={() => setNoteOpen((value) => !value)}>
+          {noteOpen ? "Hide personal note" : "Add a note"}
+        </button>
+        {noteOpen && <textarea className="wine-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="What made you feel that way?" maxLength={2000} />}
         <button className="primary-button" disabled={!reaction} onClick={save}>
           Save and next <Icon name="arrow" />
         </button>
@@ -667,6 +677,7 @@ export default function Home() {
       const varietal = wine.suggestedIdentity?.varietal ?? "";
       const matchesSearch = [
         wine.name,
+        wine.note,
         wine.detail,
         wine.transcript,
         wine.summary,
@@ -687,6 +698,7 @@ export default function Home() {
     const month = item.startedAt.slice(0, 7);
     const wineSearchText = (item.wines ?? []).flatMap((wine) => [
       wine.name,
+      wine.note,
       wine.detail,
       wine.transcript,
       wine.summary,
@@ -823,6 +835,7 @@ export default function Home() {
                 wines: item.wines?.map((wine) => ({
                   id: Number(wine.id) || 0,
                   name: wine.name,
+                  note: wine.note,
                   detail: wine.status,
                   reaction: wine.reaction,
                   status: wine.status,
@@ -999,6 +1012,7 @@ export default function Home() {
               userId: uid,
               experienceId: summary.id,
               name: wine.name,
+              note: wine.note,
               reaction: wine.reaction,
               status: toCloudStatus(wine.status),
               createdAt: Date.now(),
@@ -1620,6 +1634,7 @@ export default function Home() {
                 {wine.reflections?.map((reflection) => (
                   <p className="muted" key={reflection.id}>At home{reflection.reaction ? ` · ${reflection.reaction}` : ""}: {reflection.note}</p>
                 ))}
+                {wine.note && <p className="personal-note">“{wine.note}”</p>}
                 <button className="text-button" onClick={() => { setReflectionWineId(wine.id); setReflectionReaction(undefined); }}>
                   Add at-home reflection <Icon name="arrow" />
                 </button>
@@ -1670,6 +1685,7 @@ export default function Home() {
             <h2 id="wine-detail-title">{selectedWine.name}</h2>
             <span className="reaction-chip loved">{selectedWine.reaction}</span>
             <p className="detail-copy">{selectedWine.detail}</p>
+            {selectedWine.note && <div className="detail-section"><p className="eyebrow">YOUR NOTE</p><p className="detail-copy">{selectedWine.note}</p></div>}
             {selectedWine.summary && <div className="detail-section"><p className="eyebrow">HOST SUMMARY</p><p className="detail-copy">{selectedWine.summary}</p></div>}
             {selectedWine.transcript && <div className="detail-section"><p className="eyebrow">TRANSCRIPT</p><p className="detail-copy">{selectedWine.transcript}</p></div>}
             {selectedWine.suggestedIdentity && (

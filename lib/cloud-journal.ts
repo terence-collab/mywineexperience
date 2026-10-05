@@ -38,6 +38,7 @@ export type CloudWine = {
   userId: string;
   experienceId: string;
   name: string;
+  note?: string;
   reaction: "Loved it" | "Liked it" | "Not for me";
   status: "draft" | "waiting_upload" | "processing" | "ready" | "error";
   error?: string;
