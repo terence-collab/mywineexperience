@@ -34,6 +34,7 @@ type Wine = {
   detail: string;
   reaction?: Reaction;
   status: string;
+  error?: string;
   tone: string;
   photo?: boolean;
   audio?: boolean;
@@ -823,6 +824,7 @@ export default function Home() {
                   detail: wine.status,
                   reaction: wine.reaction,
                   status: wine.status,
+                  error: wine.error,
                   tone: "gold",
                   audio: Boolean(wine.audioPath),
                   photo: Boolean(wine.photoPath),
@@ -1670,6 +1672,7 @@ export default function Home() {
               <p className="eyebrow">SOURCE MEMORY</p>
               <p className="muted">{selectedWine.photoPath ? "Label photo available" : selectedWine.photo ? "Label photo saved" : "No label photo saved"} · {selectedWine.audioPath ? "Voice note available" : selectedWine.audio ? "Voice note queued" : "No voice note saved"}</p>
               <p className="muted">Status: {selectedWine.status}</p>
+              {selectedWine.error && <p className="form-message">We could not organise this capture yet. You can retry the media upload from Profile. ({selectedWine.error})</p>}
               {selectedWinePhotoUrl && <img className="detail-photo" src={selectedWinePhotoUrl} alt={`Label photo for ${selectedWine.name}`} />}
               {selectedWineAudioUrl && <audio className="audio-player" controls preload="metadata" src={selectedWineAudioUrl} />}
             </div>

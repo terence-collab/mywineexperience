@@ -27,6 +27,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /saveDraft/);
   assert.match(page, /Tap a draft to finish it/);
   assert.match(page, /Retry media uploads/);
+  assert.match(page, /We could not organise this capture yet/);
   assert.match(page, /SUGGESTED DETAILS/);
   assert.match(page, /audio-player/);
   assert.match(page, /detail-photo/);
@@ -83,6 +84,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("lib/offline-queue.ts"), /removeQueuedMediaForExperience/);
   assert.match(await read("lib/cloud-journal.ts"), /where\("experienceId"/);
   assert.match(await read("lib/cloud-journal.ts"), /subscribeExperiences/);
+  assert.match(await read("lib/cloud-journal.ts"), /error\?: string/);
   assert.match(await read("lib/cloud-journal.ts"), /onSnapshot/);
   assert.match(await read("lib/cloud-journal.ts"), /Remove Storage objects first/);
   assert.match(await read("lib/cloud-media.ts"), /item\.userId === userId/);
