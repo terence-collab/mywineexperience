@@ -623,6 +623,7 @@ export default function Home() {
   const [selectedFarm, setSelectedFarm] = useState(farms[0]);
   const [personalFarms, setPersonalFarms] = useState<Farm[]>([]);
   const [startOpen, setStartOpen] = useState(false);
+  const [startDateTime, setStartDateTime] = useState(() => new Date().toISOString().slice(0, 16));
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureDraft, setCaptureDraft] = useState<Wine>();
   const [endOpen, setEndOpen] = useState(false);
@@ -632,6 +633,7 @@ export default function Home() {
   const [experienceLocation, setExperienceLocation] = useState<{ latitude: number; longitude: number }>();
   const [wines, setWines] = useState(initialWines);
   const [experiences, setExperiences] = useState<ExperienceSummary[]>([]);
+  const experienceSummariesRef = useRef(new Map<string, ExperienceSummary>());
   const [search, setSearch] = useState("");
   const [favouriteSearch, setFavouriteSearch] = useState("");
   const [favouriteFarmFilter, setFavouriteFarmFilter] = useState("all");
@@ -959,12 +961,39 @@ export default function Home() {
     await uploadQueuedMedia(uid);
   }
   function begin() {
+    const experienceId = crypto.randomUUID();
+    const startedAt = startDateTime ? new Date(startDateTime).toISOString() : new Date().toISOString();
     setStartOpen(false);
-    setActiveExperienceId(crypto.randomUUID());
-    setExperienceStartedAt(new Date().toISOString());
+    setActiveExperienceId(experienceId);
+    setExperienceStartedAt(startedAt);
+    setExperienceLocation(undefined);
     if (typeof navigator !== "undefined" && navigator.geolocation)
       navigator.geolocation.getCurrentPosition(
-        (position) => setExperienceLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+        (position) => {
+          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+          setExperienceLocation(location);
+          const completed = experienceSummariesRef.current.get(experienceId);
+          if (!completed) return;
+          const updated = { ...completed, location };
+          experienceSummariesRef.current.set(experienceId, updated);
+          setExperiences((current) => current.map((item) => item.id === experienceId ? updated : item));
+          setSavedExperience((current) => current?.id === experienceId ? updated : current);
+          const uid = auth?.currentUser?.uid;
+          if (uid && firebaseEnabled)
+            void saveCloudExperience({
+              id: updated.id,
+              userId: uid,
+              farmId: updated.farmName.toLowerCase().replaceAll(" ", "-"),
+              farmName: updated.farmName,
+              farmTown: updated.town,
+              startedAt: Date.parse(updated.startedAt),
+              status: "completed",
+              wineCount: updated.wineCount,
+              overallRating: updated.rating,
+              note: updated.note,
+              location,
+            }).catch(() => undefined);
+        },
         () => undefined,
         { enableHighAccuracy: false, maximumAge: 300000, timeout: 5000 },
       );
@@ -1002,6 +1031,7 @@ export default function Home() {
       location: experienceLocation,
       wines: [...wines],
     };
+    experienceSummariesRef.current.set(summary.id, summary);
     setExperiences((current) => [summary, ...current]);
     setSavedExperience(summary);
     setExperience(false);
@@ -1194,6 +1224,7 @@ export default function Home() {
       return;
     }
     setExperiences((current) => current.filter((item) => item.id !== summary.id));
+    experienceSummariesRef.current.delete(summary.id);
     setSelectedExperience(undefined);
     setConfirmDeleteId(undefined);
   }
@@ -1549,6 +1580,14 @@ export default function Home() {
               </div>
               <button onClick={() => setStartOpen(false)}>Change farm</button>
             </div>
+            <label className="name-input setup-datetime">
+              <span>DATE &amp; TIME</span>
+              <input
+                type="datetime-local"
+                value={startDateTime}
+                onChange={(event) => setStartDateTime(event.target.value)}
+              />
+            </label>
             <p className="reassurance">You can add the details as you go.</p>
             <button className="primary-button" onClick={begin}>
               Start tasting <Icon name="arrow" />
