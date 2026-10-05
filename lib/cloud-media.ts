@@ -50,6 +50,14 @@ export async function uploadQueuedMedia(userId: string) {
     const path = item.wineId === "experience"
       ? `users/${userId}/experiences/${item.experienceId}/photos/${item.id}.${extension}`
       : `users/${userId}/experiences/${item.experienceId}/wines/${item.wineId}/${item.kind}/${item.id}.${extension}`;
+    let wineRef: ReturnType<typeof doc> | undefined;
+    let wine: { reaction?: string; status?: string } | undefined;
+    if (db && item.wineId !== "experience") {
+      wineRef = doc(db, "users", userId, "experiences", item.experienceId, "wines", item.wineId);
+      const wineSnapshot = await getDoc(wineRef);
+      if (!wineSnapshot.exists()) throw new Error("Wine draft metadata is not synced yet.");
+      wine = wineSnapshot.data() as { reaction?: string; status?: string };
+    }
     await uploadBytes(ref(configuredStorage, path), item.blob, { contentType: item.blob.type || (item.kind === "audio" ? "audio/mp4" : "image/jpeg") });
     await getDownloadURL(ref(configuredStorage, path));
     if (db && item.wineId === "experience") {
@@ -59,10 +67,7 @@ export async function uploadQueuedMedia(userId: string) {
         { merge: true },
       );
     } else if (db) {
-      const wineRef = doc(db, "users", userId, "experiences", item.experienceId, "wines", item.wineId);
-      const wineSnapshot = await getDoc(wineRef);
-      if (!wineSnapshot.exists()) throw new Error("Wine draft metadata is not synced yet.");
-      const wine = wineSnapshot.data() as { reaction?: string; status?: string };
+      if (!wineRef || !wine) throw new Error("Wine draft metadata is not synced yet.");
       await setDoc(wineRef, {
         userId,
         experienceId: item.experienceId,
