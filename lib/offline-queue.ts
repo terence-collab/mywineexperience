@@ -1,3 +1,5 @@
+import { trackEvent } from "./telemetry";
+
 export type QueuedMedia = {
   id: string;
   userId?: string;
@@ -32,6 +34,7 @@ export async function enqueueMedia(item: Omit<QueuedMedia, "createdAt" | "attemp
     request.onerror = () => reject(request.error);
   });
   database.close();
+  trackEvent("media_queued", { kind: item.kind, online: typeof navigator !== "undefined" && navigator.onLine });
   if (typeof window !== "undefined") window.dispatchEvent(new Event("media-queue-changed"));
 }
 
@@ -104,10 +107,13 @@ export async function flushQueuedMedia(upload: (item: QueuedMedia) => Promise<vo
     try {
       await upload(item);
       await removeQueuedMedia(item.id);
+      trackEvent("media_upload_completed", { kind: item.kind, attempts: item.attempts + 1 });
       uploaded += 1;
     } catch (error) {
       await markQueueFailure(item, error);
+      trackEvent("media_upload_failed", { kind: item.kind, attempts: item.attempts + 1 });
     }
   }
+  if (uploaded > 0) trackEvent("offline_sync_recovered", { count: uploaded });
   return { attempted: items.length, uploaded };
 }

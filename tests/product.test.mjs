@@ -38,6 +38,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /Filter journal by month/);
   assert.match(page, /Filter journal by reaction/);
   assert.match(page, /Needs review/);
+  assert.match(page, /trackEvent\("experience_started"/);
   assert.match(page, /Open history/);
   assert.match(page, /Latest farm feeling/);
   assert.match(page, /Loved it:/);
@@ -57,6 +58,8 @@ test("cloud boundaries and privacy artifacts are present", async () => {
     read("app/api/enrich/route.ts"), read("app/api/farms/search/route.ts"), read("firestore.rules"), read("storage.rules"), read("app/manifest.ts"), read("firebase.json"), read("lib/cloud-media.ts"), read("public/service-worker.js"), read("functions/src/index.ts"),
   ]);
   assert.match(enrich, /GEMINI_API_KEY/);
+  assert.match(await read("app/api/events/route.ts"), /wine_experience_event/);
+  assert.match(await read("lib/telemetry.ts"), /allowedEvents/);
   assert.match(enrich, /x-enrichment-job-secret/);
   assert.match(farms, /maps\.googleapis\.com\/maps\/api\/place\/textsearch\/json/);
   assert.match(farms, /fallbackFarms/);

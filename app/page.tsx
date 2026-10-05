@@ -22,6 +22,7 @@ import {
 } from "../lib/cloud-journal";
 import { getMediaDownloadUrl, uploadQueuedMedia } from "../lib/cloud-media";
 import { claimUnassignedMedia, enqueueMedia, listQueuedMedia, removeQueuedMediaForExperience } from "../lib/offline-queue";
+import { trackEvent } from "../lib/telemetry";
 
 type Reaction = "Loved it" | "Liked it" | "Not for me";
 type Tab = "map" | "journal" | "favourites" | "profile";
@@ -906,11 +907,13 @@ export default function Home() {
     setRating(0);
     setNote("");
     setExperience(true);
+    trackEvent("experience_started", { online: navigator.onLine });
   }
   function saveWine(wine: Wine) {
     setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
     setCaptureDraft(undefined);
     setCaptureOpen(false);
+    trackEvent("wine_saved", { kind: wine.audio || wine.photo ? "media" : "manual", online: navigator.onLine });
   }
   function saveWineDraft(wine: Wine, photoFile?: File) {
     if (photoFile)
@@ -946,6 +949,7 @@ export default function Home() {
     setExperienceStartedAt(undefined);
     setExperienceLocation(undefined);
     setEndOpen(false);
+    trackEvent("experience_completed", { wineCount: summary.wineCount, rating: summary.rating, online: navigator.onLine });
     const uid = auth?.currentUser?.uid;
     if (uid && firebaseEnabled)
       void Promise.all([
@@ -1049,6 +1053,7 @@ export default function Home() {
     setExperiences((current) => current.map(updateExperience));
     setSelectedExperience((current) => current && current.id === selectedWineExperienceId ? updateExperience(current) : current);
     setSelectedWine(updatedWine);
+    trackEvent("suggestion_reviewed", { status });
     const uid = auth?.currentUser?.uid;
     if (uid && firebaseEnabled && updatedWine.reaction)
       void saveCloudWine({
