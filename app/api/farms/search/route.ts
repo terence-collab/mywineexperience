@@ -16,17 +16,48 @@ export async function GET(request: Request) {
     return NextResponse.json({ farms: fallbackFarms.filter((farm) => `${farm.name} ${farm.town}`.toLowerCase().includes(query.toLowerCase())), source: "curated" });
   }
 
-  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location" },
-    body: JSON.stringify({ textQuery: `${query} wine farm Western Cape South Africa`, languageCode: "en", pageSize: 8 }),
-  });
+  // The shared Smile and Whistle credential is restricted to the legacy
+  // Places API, so use its server-side Text Search endpoint here. Keeping the
+  // provider behind this route means the client never receives the key and we
+  // can migrate to Places API (New) later without changing the UI contract.
+  const endpoint = new URL("https://maps.googleapis.com/maps/api/place/textsearch/json");
+  endpoint.searchParams.set("query", `${query} wine farm Western Cape South Africa`);
+  endpoint.searchParams.set("language", "en");
+  endpoint.searchParams.set("region", "za");
+  endpoint.searchParams.set("key", apiKey);
+  const response = await fetch(endpoint, { cache: "no-store" });
   if (!response.ok) {
     const providerError = (await response.text()).slice(0, 500);
     console.warn("Places API request failed", { status: response.status, providerError });
     return NextResponse.json({ farms: fallbackFarms, source: "curated", warning: "Places search unavailable" });
   }
-  const data = await response.json() as { places?: { id?: string; displayName?: { text?: string }; formattedAddress?: string; location?: { latitude?: number; longitude?: number } }[] };
-  const farms = (data.places ?? []).map((place) => ({ id: place.id ?? crypto.randomUUID(), name: place.displayName?.text ?? "Unnamed place", town: place.formattedAddress?.split(",")[0] ?? "Western Cape", province: "Western Cape", source: "google_places", location: place.location }));
+  const data = await response.json() as {
+    status?: string;
+    error_message?: string;
+    results?: {
+      place_id?: string;
+      name?: string;
+      formatted_address?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+    }[];
+  };
+  if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+    console.warn("Places API request failed", { status: data.status, providerError: data.error_message });
+    return NextResponse.json({ farms: fallbackFarms, source: "curated", warning: "Places search unavailable" });
+  }
+  const farms = (data.results ?? []).map((place) => {
+    const addressParts = place.formatted_address?.split(",").map((part) => part.trim()).filter(Boolean) ?? [];
+    const location = place.geometry?.location;
+    return {
+      id: place.place_id ?? crypto.randomUUID(),
+      name: place.name ?? "Unnamed place",
+      town: addressParts[1] ?? addressParts[0] ?? "Western Cape",
+      province: "Western Cape",
+      source: "google_places",
+      location: location?.lat !== undefined && location.lng !== undefined
+        ? { latitude: location.lat, longitude: location.lng }
+        : undefined,
+    };
+  });
   return NextResponse.json({ farms, source: "google_places" });
 }
