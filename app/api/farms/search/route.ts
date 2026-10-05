@@ -21,7 +21,11 @@ export async function GET(request: Request) {
     headers: { "Content-Type": "application/json", "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location" },
     body: JSON.stringify({ textQuery: `${query} wine farm Western Cape South Africa`, languageCode: "en", pageSize: 8 }),
   });
-  if (!response.ok) return NextResponse.json({ farms: fallbackFarms, source: "curated", warning: "Places search unavailable" });
+  if (!response.ok) {
+    const providerError = (await response.text()).slice(0, 500);
+    console.warn("Places API request failed", { status: response.status, providerError });
+    return NextResponse.json({ farms: fallbackFarms, source: "curated", warning: "Places search unavailable" });
+  }
   const data = await response.json() as { places?: { id?: string; displayName?: { text?: string }; formattedAddress?: string; location?: { latitude?: number; longitude?: number } }[] };
   const farms = (data.places ?? []).map((place) => ({ id: place.id ?? crypto.randomUUID(), name: place.displayName?.text ?? "Unnamed place", town: place.formattedAddress?.split(",")[0] ?? "Western Cape", province: "Western Cape", source: "google_places", location: place.location }));
   return NextResponse.json({ farms, source: "google_places" });
