@@ -14,6 +14,8 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /Liked it/);
   assert.match(page, /Not for me/);
   assert.match(page, /Save experience/);
+  assert.match(page, /Experience summary/);
+  assert.match(page, /organising/);
   assert.match(page, /Add an at-home reflection/);
   assert.match(page, /Update your feeling\? \(optional\)/);
   assert.match(page, /passwordless email link/);

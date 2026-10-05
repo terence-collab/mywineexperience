@@ -1527,6 +1527,12 @@ export default function Home() {
             <h2 id="end-sheet-title">
               How was the <em>whole day?</em>
             </h2>
+            <div className="end-summary" aria-label="Experience summary">
+              <div><strong>{wines.length}</strong><span>wines captured</span></div>
+              <div><strong>{wines.filter((wine) => wine.reaction === "Loved it").length}</strong><span>Loved it</span></div>
+              <div><strong>{wines.filter((wine) => wine.status === "Waiting to upload" || wine.status === "Processing").length}</strong><span>organising</span></div>
+            </div>
+            <p className="muted">Your tasting is saved before background organisation finishes.</p>
             <div className="star-row">
               {[1, 2, 3, 4, 5].map((value) => (
                   <button
