@@ -9,7 +9,7 @@ Phone-first private wine-tasting journal for capturing the place, the pour, and 
 - Reaction capture: Loved it, Liked it, or Not for me.
 - Mobile microphone and camera capture with local-first status and IndexedDB media queue.
 - Offline-safe local journal persistence, export, deletion, completed experience history, and wine reflections.
-- Firebase Authentication UI for email/password and Apple sign-in.
+- Firebase Authentication UI for email/password and passwordless email links.
 - Firestore and Storage helpers, security rules, indexes, and deploy configuration.
 - Server-only Gemini enrichment route with structured wine extraction.
 - Firebase Functions enrichment worker with retries, Storage media reads, and audio-retention cleanup.
@@ -45,7 +45,7 @@ The configured local services are Auth on `9099`, Firestore on `8080`, Storage o
 
 1. Create or select a Firebase project and copy the project ID into a local `.firebaserc` based on `.firebaserc.example`.
 2. Create a Firebase Web App and provide its values through the `NEXT_PUBLIC_FIREBASE_*` variables.
-3. Enable Email/Password and Apple providers in Firebase Authentication. Add the deployed domain and `localhost` to authorized domains.
+3. Enable Email/Password and Email-link providers in Firebase Authentication. Add the deployed domain and `localhost` to authorized domains. Apple sign-in is intentionally not part of this build.
 4. Set `GOOGLE_MAPS_SERVER_API_KEY` with Places API (New) Text Search enabled.
 5. Set server-only `GEMINI_API_KEY`, optional `GEMINI_MODEL`, and `ENRICHMENT_JOB_SECRET`.
 6. Set the Functions parameter `ENRICHMENT_ENDPOINT_URL` to the deployed `/api/enrich` URL, store the same `ENRICHMENT_JOB_SECRET` with Firebase Secret Manager, and deploy it:
