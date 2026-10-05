@@ -12,7 +12,11 @@
     "rules": "storage.rules"
   },
   "auth": {
-    "authorizedDomains": ["localhost"]
+    "authorizedDomains": [
+      "localhost",
+      "mywineexperience-terences-projects-81a76a73.vercel.app",
+      "mywineexperience-git-master-terences-projects-81a76a73.vercel.app"
+    ]
   },
   "emulators": {
     "auth": { "port": 9099 },
