@@ -25,6 +25,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /Leave for later/);
   assert.match(page, /saveDraft/);
   assert.match(page, /Tap a draft to finish it/);
+  assert.match(page, /Retry media uploads/);
   assert.match(page, /SUGGESTED DETAILS/);
   assert.match(page, /audio-player/);
   assert.match(page, /detail-photo/);

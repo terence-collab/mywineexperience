@@ -867,6 +867,11 @@ export default function Home() {
     await claimUnassignedMedia(uid);
     await uploadQueuedMedia(uid);
   }
+  async function retryQueuedMedia() {
+    const uid = auth?.currentUser?.uid;
+    if (!uid) return;
+    await uploadQueuedMedia(uid);
+  }
   function begin() {
     setStartOpen(false);
     setActiveExperienceId(crypto.randomUUID());
@@ -1331,6 +1336,7 @@ export default function Home() {
             <AccountAccess />
             <div className="settings-list">
               {auth?.currentUser && mediaQueue.unassigned > 0 && <button onClick={() => void attachUnassignedMedia()}><span>↗</span><div>Attach pending media<small>Sync offline captures to this account</small></div><Icon name="arrow" /></button>}
+              {auth?.currentUser && mediaQueue.failed > 0 && <button onClick={() => void retryQueuedMedia()}><span>↻</span><div>Retry media uploads<small>{mediaQueue.failed} capture{mediaQueue.failed === 1 ? "" : "s"} waiting for another try</small></div><Icon name="arrow" /></button>}
               <button onClick={() => setKeepAudio((value) => !value)}>
                 <span>R</span> Keep original recordings{" "}
                 <small>{keepAudio ? "On" : "Off"}</small>
