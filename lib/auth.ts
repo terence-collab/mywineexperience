@@ -1,13 +1,10 @@
 import {
   createUserWithEmailAndPassword,
   isSignInWithEmailLink,
-  linkWithPopup,
-  OAuthProvider,
   onAuthStateChanged,
   sendSignInLinkToEmail,
   signInWithEmailLink,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signOut,
   type User,
 } from "firebase/auth";
@@ -45,14 +42,6 @@ export async function completePasswordlessSignIn() {
   const result = await signInWithEmailLink(configuredAuth, email, window.location.href);
   window.localStorage.removeItem("my-wine-email-for-sign-in");
   return result;
-}
-
-export async function signInWithApple() {
-  const configuredAuth = requireAuth();
-  const provider = new OAuthProvider("apple.com");
-  return configuredAuth.currentUser
-    ? linkWithPopup(configuredAuth.currentUser, provider)
-    : signInWithPopup(configuredAuth, provider);
 }
 
 export async function signOutUser() {

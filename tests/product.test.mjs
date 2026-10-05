@@ -43,7 +43,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /makePersonalFarm/);
   assert.match(page, /experienceStartedAt/);
   assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
-  assert.match(await read("lib/auth.ts"), /linkWithPopup/);
+  assert.doesNotMatch(await read("lib/auth.ts"), /signInWithApple/);
   assert.match(await read("app/register-service-worker.tsx"), /serviceWorker.register/);
 });
 
@@ -53,7 +53,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   ]);
   assert.match(enrich, /GEMINI_API_KEY/);
   assert.match(enrich, /x-enrichment-job-secret/);
-  assert.match(farms, /places:searchText/);
+  assert.match(farms, /maps\.googleapis\.com\/maps\/api\/place\/textsearch\/json/);
   assert.match(farms, /fallbackFarms/);
   assert.match(firestore, /request\.auth\.uid/);
   assert.match(storage, /request\.resource\.contentType/);
