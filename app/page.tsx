@@ -686,6 +686,18 @@ export default function Home() {
     return [...groups.entries()].sort(([first], [second]) => second.localeCompare(first));
   }, [visibleExperiences]);
   const selectedFarmHistory = farmHistory.get(selectedFarm.name);
+  const selectedFarmExperiences = useMemo(
+    () => experiences.filter((item) => item.farmName.toLowerCase() === selectedFarm.name.toLowerCase()),
+    [experiences, selectedFarm.name],
+  );
+  const selectedFarmLatestRating = [...selectedFarmExperiences]
+    .sort((left, right) => Date.parse(right.startedAt) - Date.parse(left.startedAt))[0]?.rating;
+  const selectedFarmLovedWines = selectedFarmExperiences
+    .flatMap((item) => item.wines ?? [])
+    .filter((wine) => wine.reaction === "Loved it")
+    .map((wine) => wine.name)
+    .filter((name, index, names) => names.indexOf(name) === index)
+    .slice(0, 3);
   useEffect(() => {
     // Complete magic-link sign-in at the app shell so returning users do not
     // need to open Profile before Firebase can restore their account.
@@ -1167,7 +1179,7 @@ export default function Home() {
                 {filtered.map((farm) => (
                   <button
                     key={farm.name}
-                    className={`map-pin ${selectedFarm.name === farm.name ? "active" : ""}`}
+                    className={`map-pin ${selectedFarm.name === farm.name ? "active" : ""} ${farm.visited || farmHistory.get(farm.name)?.visited ? "visited" : ""} ${farm.favourite || farmHistory.get(farm.name)?.favourite ? "favourite" : ""}`}
                     style={{ top: farm.top, left: farm.left }}
                     onClick={() => setSelectedFarm(farm)}
                   >
@@ -1185,6 +1197,8 @@ export default function Home() {
                   <p className="muted">
                     {selectedFarm.town} - {selectedFarm.note}{selectedFarmHistory?.visits ? ` - ${selectedFarmHistory.visits} visit${selectedFarmHistory.visits === 1 ? "" : "s"}` : ""}
                   </p>
+                  {selectedFarmLatestRating ? <p className="farm-history-detail">Latest farm feeling: {"*".repeat(selectedFarmLatestRating)}</p> : null}
+                  {selectedFarmLovedWines.length ? <p className="farm-history-detail">Loved it: {selectedFarmLovedWines.join(", ")}</p> : null}
                   {selectedFarmHistory?.visited && <button className="text-button" onClick={() => { setJournalSearch(selectedFarm.name); setTab("journal"); }}>Open history <Icon name="arrow" /></button>}
                 </div>
                 <button

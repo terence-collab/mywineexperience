@@ -38,6 +38,8 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /Filter journal by month/);
   assert.match(page, /Filter journal by reaction/);
   assert.match(page, /Open history/);
+  assert.match(page, /Latest farm feeling/);
+  assert.match(page, /Loved it:/);
   assert.match(page, /Open farm in Maps/);
   assert.match(page, /my-wine-experience:\$\{authUserId\}/);
   assert.match(page, /migrateDeviceJournalToAccount/);
