@@ -5,6 +5,25 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function owns(data) { return signedIn() && data.userId == request.auth.uid; }
     function validReaction(value) { return value == 'Loved it' || value == 'Liked it' || value == 'Not for me'; }
+    function validRating(value) { return value is int && value >= 1 && value <= 5; }
+    function validExperience(data) {
+      return data.userId is string
+        && data.farmId is string
+        && data.farmName is string
+        && data.wineCount is int
+        && data.wineCount >= 0
+        && data.wineCount <= 7
+        && (data.status == 'active' || data.status == 'completed')
+        && (!('overallRating' in data) || validRating(data.overallRating));
+    }
+    function validWine(data, experienceId) {
+      return data.userId is string
+        && data.experienceId == experienceId
+        && data.name is string
+        && data.name.size() <= 200
+        && validReaction(data.reaction)
+        && (data.status == 'draft' || data.status == 'waiting_upload' || data.status == 'processing' || data.status == 'ready' || data.status == 'error');
+    }
 
     match /users/{userId} {
       allow read, update, delete: if signedIn() && request.auth.uid == userId;
@@ -14,24 +33,30 @@ service cloud.firestore {
         allow read, delete: if owns(resource.data);
         allow create: if owns(request.resource.data)
           && request.resource.data.userId == userId
-          && request.resource.data.wineCount >= 0
-          && request.resource.data.wineCount <= 7;
+          && validExperience(request.resource.data);
         allow update: if owns(resource.data) && owns(request.resource.data)
-          && request.resource.data.wineCount >= 0
-          && request.resource.data.wineCount <= 7;
+          && request.resource.data.userId == userId
+          && validExperience(request.resource.data);
 
         match /wines/{wineId} {
           allow read, delete: if owns(resource.data);
           allow create: if owns(request.resource.data)
             && request.resource.data.userId == userId
-            && validReaction(request.resource.data.reaction);
+            && validWine(request.resource.data, experienceId);
           allow update: if owns(resource.data) && owns(request.resource.data)
-            && validReaction(request.resource.data.reaction);
+            && request.resource.data.userId == userId
+            && validWine(request.resource.data, experienceId);
 
           match /reflections/{reflectionId} {
             allow read, delete: if owns(resource.data);
             allow create, update: if owns(request.resource.data)
-              && request.resource.data.userId == userId;
+              && request.resource.data.userId == userId
+              && request.resource.data.experienceId == experienceId
+              && request.resource.data.wineId == wineId
+              && request.resource.data.note is string
+              && request.resource.data.note.size() <= 4000
+              && (request.resource.data.type == 'at_home' || request.resource.data.type == 'general')
+              && (!('reaction' in request.resource.data) || validReaction(request.resource.data.reaction));
           }
         }
       }

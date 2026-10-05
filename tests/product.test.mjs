@@ -56,6 +56,10 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(farms, /maps\.googleapis\.com\/maps\/api\/place\/textsearch\/json/);
   assert.match(farms, /fallbackFarms/);
   assert.match(firestore, /request\.auth\.uid/);
+  assert.match(firestore, /validRating/);
+  assert.match(firestore, /validExperience/);
+  assert.match(firestore, /validWine/);
+  assert.match(firestore, /wineCount <= 7/);
   assert.match(storage, /request\.resource\.contentType/);
   assert.match(manifest, /My Wine Experience/);
   assert.match(firebaseConfig, /firestore\.rules/);
