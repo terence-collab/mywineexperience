@@ -600,6 +600,7 @@ export default function Home() {
   const [journalRatingFilter, setJournalRatingFilter] = useState("all");
   const [journalMonthFilter, setJournalMonthFilter] = useState("all");
   const [journalReactionFilter, setJournalReactionFilter] = useState("all");
+  const [showNeedsReview, setShowNeedsReview] = useState(false);
   const [farmFilter, setFarmFilter] = useState<FarmFilter>("all");
   const [searchResults, setSearchResults] = useState<FarmSearchResult[]>([]);
   const [rating, setRating] = useState(0);
@@ -668,6 +669,7 @@ export default function Home() {
     });
   }, [experiences, favouriteDateFilter, favouriteFarmFilter, favouriteSearch, favouriteTypeFilter, filterReferenceTime]);
   const journalMonthOptions = useMemo(() => [...new Set(experiences.map((item) => item.startedAt.slice(0, 7)))].sort().reverse(), [experiences]);
+  const needsReviewCount = useMemo(() => experiences.reduce((total, item) => total + (item.wines ?? []).filter((wine) => wine.suggestedIdentity && wine.suggestionStatus !== "confirmed").length, 0), [experiences]);
   const visibleExperiences = useMemo(() => experiences.filter((item) => {
     const month = item.startedAt.slice(0, 7);
     const matchesSearch = `${item.farmName} ${item.town} ${item.note ?? ""}`.toLowerCase().includes(journalSearch.toLowerCase());
@@ -675,8 +677,9 @@ export default function Home() {
     const matchesRating = journalRatingFilter === "all" || item.rating === Number(journalRatingFilter);
     const matchesMonth = journalMonthFilter === "all" || month === journalMonthFilter;
     const matchesReaction = journalReactionFilter === "all" || (item.wines ?? []).some((wine) => wine.reaction === journalReactionFilter);
-    return matchesSearch && matchesFarm && matchesRating && matchesMonth && matchesReaction;
-  }), [experiences, journalFarmFilter, journalMonthFilter, journalRatingFilter, journalReactionFilter, journalSearch]);
+    const matchesReview = !showNeedsReview || (item.wines ?? []).some((wine) => wine.suggestedIdentity && wine.suggestionStatus !== "confirmed");
+    return matchesSearch && matchesFarm && matchesRating && matchesMonth && matchesReaction && matchesReview;
+  }), [experiences, journalFarmFilter, journalMonthFilter, journalRatingFilter, journalReactionFilter, journalSearch, showNeedsReview]);
   const journalGroups = useMemo(() => {
     const groups = new Map<string, ExperienceSummary[]>();
     for (const item of visibleExperiences) {
@@ -1258,6 +1261,7 @@ export default function Home() {
                 <option value="Liked it">Liked it</option>
                 <option value="Not for me">Not for me</option>
               </select>
+              {needsReviewCount > 0 && <button className={`review-filter ${showNeedsReview ? "active" : ""}`} onClick={() => setShowNeedsReview((value) => !value)}>Needs review ({needsReviewCount})</button>}
             </div>
             {journalGroups.length ? (
               journalGroups.map(([month, items]) => <div key={month} className="journal-month-group">
