@@ -50,6 +50,7 @@ button,input { font:inherit; } button { cursor:pointer; } svg { width:20px; heig
 .journal-search { margin:0 0 24px; max-width:520px; }
 .manual-farm-result { width:100%; border:0; background:var(--paper); color:var(--wine); padding:13px 16px; text-align:left; font-size:12px; }
 .retention-note { color:var(--muted); font-size:10px; text-align:center; line-height:1.5; max-width:340px; margin:10px auto 0; }
+.recording-reminder { color:var(--muted); font-size:11px; line-height:1.45; margin:0 0 10px; max-width:480px; }
 .audio-player { width:100%; margin-top:12px; height:36px; }
 .active-wine-row { width:100%; border-left:0; border-right:0; background:transparent; text-align:left; color:inherit; }
 .active-wine-row:disabled { opacity:1; }

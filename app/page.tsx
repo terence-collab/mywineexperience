@@ -45,13 +45,21 @@ type Wine = {
   transcript?: string;
   summary?: string;
   suggestedIdentity?: {
+    name?: string;
     producer?: string;
     varietal?: string;
     vintage?: string;
+    region?: string;
+    descriptors?: string[];
+    winemakingDetails?: string[];
+    foodPairings?: string[];
     evidence?: string[];
+    evidenceSources?: string[];
     model?: string;
     extractionVersion?: string;
+    processedAt?: unknown;
   };
+  confirmedName?: string;
   suggestionStatus?: "suggested" | "confirmed" | "deferred";
   reflections?: Reflection[];
 };
@@ -262,6 +270,7 @@ function CaptureSheet({
   const [photo, setPhoto] = useState<string>();
   const [photoCaptured, setPhotoCaptured] = useState(Boolean(draft?.photo));
   const [photoFile, setPhotoFile] = useState<File>();
+  const [captureMessage, setCaptureMessage] = useState("");
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const input = useRef<HTMLInputElement>(null);
@@ -280,7 +289,7 @@ function CaptureSheet({
       !navigator.mediaDevices?.getUserMedia ||
       typeof MediaRecorder === "undefined"
     ) {
-      setAudioCaptured(true);
+      setCaptureMessage("Microphone capture is not available in this browser. You can still save the wine manually.");
       return;
     }
     try {
@@ -311,7 +320,7 @@ function CaptureSheet({
       next.start();
       setRecording(true);
     } catch {
-      setAudioCaptured(true);
+      setCaptureMessage("Microphone permission was not granted. You can still save the wine manually.");
     }
   }
   function choosePhoto(event: React.ChangeEvent<HTMLInputElement>) {
@@ -389,6 +398,7 @@ function CaptureSheet({
             x
           </button>
         </div>
+        <p className="recording-reminder">Make sure people are comfortable being recorded. Your recording is kept private and used only to organise this wine.</p>
         <div className="capture-actions">
           <button
             className={`capture-action ${recording ? "recording" : ""}`}
@@ -455,6 +465,7 @@ function CaptureSheet({
             />
           </label>
         </div>
+        {captureMessage && <p className="form-message" role="status">{captureMessage}</p>}
         <p className="reaction-label">How did it feel?</p>
         <div className="reaction-grid">
           {(["Loved it", "Liked it", "Not for me"] as Reaction[]).map(
@@ -836,6 +847,7 @@ export default function Home() {
                 wines: item.wines?.map((wine) => ({
                   id: Number(wine.id) || 0,
                   name: wine.name,
+                  confirmedName: wine.confirmedName,
                   note: wine.note,
                   detail: wine.status,
                   reaction: wine.reaction,
@@ -1061,13 +1073,13 @@ export default function Home() {
     const name = editedWineName.trim();
     const updated = {
       ...selectedExperience,
-      wines: selectedExperience.wines?.map((wine) => wine.id === editingWineId ? { ...wine, name } : wine),
+      wines: selectedExperience.wines?.map((wine) => wine.id === editingWineId ? { ...wine, name, confirmedName: name, suggestionStatus: "confirmed" as const } : wine),
     };
     setExperiences((current) => current.map((item) => item.id === updated.id ? updated : item));
     setSelectedExperience(updated);
     setEditingWineId(undefined);
     setEditedWineName("");
-    setWines((current) => current.map((wine) => wine.id === editingWineId ? { ...wine, name } : wine));
+    setWines((current) => current.map((wine) => wine.id === editingWineId ? { ...wine, name, confirmedName: name, suggestionStatus: "confirmed" } : wine));
     const updatedWine = updated.wines?.find((wine) => wine.id === editingWineId);
     const uid = auth?.currentUser?.uid;
     if (uid && firebaseEnabled && updatedWine?.reaction)
@@ -1076,14 +1088,22 @@ export default function Home() {
         userId: uid,
         experienceId: updated.id,
         name,
+        confirmedName: name,
         reaction: updatedWine.reaction,
         status: toCloudStatus(updatedWine.status),
+        suggestedIdentity: updatedWine.suggestedIdentity,
+        suggestionStatus: "confirmed",
         createdAt: Date.now(),
       }).catch(() => undefined);
   }
   function updateSuggestionStatus(status: "confirmed" | "deferred") {
     if (!selectedWine || !selectedWineExperienceId) return;
-    const updatedWine = { ...selectedWine, suggestionStatus: status };
+    const suggestedName = selectedWine.suggestedIdentity?.name?.trim();
+    const updatedWine = {
+      ...selectedWine,
+      ...(status === "confirmed" && suggestedName ? { name: suggestedName, confirmedName: suggestedName } : {}),
+      suggestionStatus: status,
+    };
     const updateExperience = (item: ExperienceSummary) => item.id === selectedWineExperienceId
       ? { ...item, wines: item.wines?.map((wine) => wine.id === selectedWine.id ? updatedWine : wine) }
       : item;
@@ -1098,6 +1118,7 @@ export default function Home() {
         userId: uid,
         experienceId: selectedWineExperienceId,
         name: updatedWine.name,
+        confirmedName: updatedWine.confirmedName,
         reaction: updatedWine.reaction,
         status: toCloudStatus(updatedWine.status),
         suggestedIdentity: updatedWine.suggestedIdentity,
@@ -1693,8 +1714,11 @@ export default function Home() {
               <div className="detail-section">
                 <p className="eyebrow">SUGGESTED DETAILS</p>
                 <p className="detail-copy">
-                  {[selectedWine.suggestedIdentity.producer, selectedWine.suggestedIdentity.varietal, selectedWine.suggestedIdentity.vintage].filter(Boolean).join(" · ") || "No additional details yet."}
+                  {[selectedWine.suggestedIdentity.name, selectedWine.suggestedIdentity.producer, selectedWine.suggestedIdentity.varietal, selectedWine.suggestedIdentity.vintage, selectedWine.suggestedIdentity.region].filter(Boolean).join(" · ") || "No additional details yet."}
                 </p>
+                {selectedWine.suggestedIdentity.descriptors?.length ? <p className="muted">Descriptors: {selectedWine.suggestedIdentity.descriptors.join(", ")}</p> : null}
+                {selectedWine.suggestedIdentity.winemakingDetails?.length ? <p className="muted">Winemaking: {selectedWine.suggestedIdentity.winemakingDetails.join(", ")}</p> : null}
+                {selectedWine.suggestedIdentity.foodPairings?.length ? <p className="muted">Pairings: {selectedWine.suggestedIdentity.foodPairings.join(", ")}</p> : null}
                 {selectedWine.suggestedIdentity.evidence?.map((snippet) => <p className="muted" key={snippet}>“{snippet}”</p>)}
                 <p className="muted">Suggestion only — edit the wine name if you want to confirm it.</p>
                 {selectedWine.suggestionStatus === "confirmed" ? <p className="suggestion-confirmed">Confirmed by you</p> : (

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 const maxInlineBytes = 20 * 1024 * 1024;
+const extractionVersion = "wine-extraction-v1";
 
 const wineSchema = {
   type: "object",
@@ -10,14 +11,20 @@ const wineSchema = {
     producer: { type: "string", description: "Producer or farm name, or empty string when unknown." },
     varietal: { type: "string", description: "Grape variety or wine type, or empty string when unknown." },
     vintage: { type: "string", description: "Vintage year, or empty string when unknown." },
+    region: { type: "string", description: "Region or appellation only when stated in the evidence." },
+    descriptors: { type: "array", items: { type: "string" }, description: "Tasting descriptors explicitly stated in the evidence." },
+    winemakingDetails: { type: "array", items: { type: "string" }, description: "Winemaking details explicitly stated in the evidence." },
+    foodPairings: { type: "array", items: { type: "string" }, description: "Food pairings explicitly mentioned in the evidence." },
     summary: { type: "string", description: "Short evidence-supported summary of the host description." },
     evidence: { type: "array", items: { type: "string" }, description: "Short source snippets supporting the extracted fields." },
+    evidenceSources: { type: "array", items: { type: "string" }, description: "Evidence kinds used, such as ocr, transcript, or user_hint." },
   },
   required: ["transcript", "name", "producer", "varietal", "vintage", "summary", "evidence"],
 };
 
 type EnrichmentRequest = {
   transcriptHint?: string;
+  context?: { farmName?: string; farmTown?: string; capturedAt?: string };
   media?: { data: string; mimeType: string }[];
 };
 
@@ -37,7 +44,13 @@ export async function POST(request: Request) {
   if (totalBytes > maxInlineBytes) return NextResponse.json({ error: "Inline media exceeds the 20 MB limit; upload it through the Files API first." }, { status: 413 });
 
   const input = [
-    { type: "text", text: `Extract only details supported by the supplied evidence. Never invent a wine name or vintage. ${body.transcriptHint ? `Existing user hint: ${body.transcriptHint}` : ""}` },
+    { type: "text", text: [
+      "Extract only details supported by the supplied evidence. Never invent a wine name, vintage, descriptors, or technical detail.",
+      "A close label image outweighs a vague spoken phrase when they conflict.",
+      body.context?.farmName ? `Farm context: ${body.context.farmName}${body.context.farmTown ? `, ${body.context.farmTown}` : ""}. Use it only for disambiguation; do not fabricate a match.` : "",
+      body.context?.capturedAt ? `Capture time: ${body.context.capturedAt}.` : "",
+      body.transcriptHint ? `Existing user hint: ${body.transcriptHint}` : "",
+    ].filter(Boolean).join(" ") },
     ...media.map((item) => ({ type: item.mimeType.startsWith("audio/") ? "audio" : "image", data: item.data, mime_type: item.mimeType })),
   ];
 
@@ -48,6 +61,6 @@ export async function POST(request: Request) {
   });
   if (!response.ok) return NextResponse.json({ error: "Gemini enrichment failed.", providerStatus: response.status }, { status: 502 });
   const result = await response.json() as { output_text?: string };
-  try { return NextResponse.json({ extraction: JSON.parse(result.output_text ?? "{}"), model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash" }); }
+  try { return NextResponse.json({ extraction: JSON.parse(result.output_text ?? "{}"), model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash", extractionVersion }); }
   catch { return NextResponse.json({ error: "Gemini returned an invalid structured response." }, { status: 502 }); }
 }

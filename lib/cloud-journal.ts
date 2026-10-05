@@ -47,13 +47,21 @@ export type CloudWine = {
   transcript?: string;
   summary?: string;
   suggestedIdentity?: {
+    name?: string;
     producer?: string;
     varietal?: string;
     vintage?: string;
+    region?: string;
+    descriptors?: string[];
+    winemakingDetails?: string[];
+    foodPairings?: string[];
     evidence?: string[];
+    evidenceSources?: string[];
     model?: string;
     extractionVersion?: string;
+    processedAt?: unknown;
   };
+  confirmedName?: string;
   suggestionStatus?: "suggested" | "confirmed" | "deferred";
   retainAudio?: boolean;
   createdAt: number;
