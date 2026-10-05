@@ -1,0 +1,81 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const root = new URL("../", import.meta.url);
+const read = (file) => readFile(new URL(file, root), "utf8");
+
+test("product surface contains the core tasting loop", async () => {
+  const page = await read("app/page.tsx");
+  assert.match(page, /Start tasting/);
+  assert.match(page, /Record the host/);
+  assert.match(page, /Photograph the bottle/);
+  assert.match(page, /Loved it/);
+  assert.match(page, /Liked it/);
+  assert.match(page, /Not for me/);
+  assert.match(page, /Save experience/);
+  assert.match(page, /Add an at-home reflection/);
+  assert.match(page, /Update your feeling\? \(optional\)/);
+  assert.match(page, /passwordless email link/);
+  assert.match(page, /Add at-home reflection/);
+  assert.match(page, /Export your journal/);
+  assert.match(page, /queuedMedia/);
+  assert.match(page, /Edit name/);
+  assert.match(page, /Looks right/);
+  assert.match(page, /Leave for later/);
+  assert.match(page, /saveDraft/);
+  assert.match(page, /Tap a draft to finish it/);
+  assert.match(page, /SUGGESTED DETAILS/);
+  assert.match(page, /audio-player/);
+  assert.match(page, /detail-photo/);
+  assert.match(page, /Filter favourites by farm/);
+  assert.match(page, /Filter favourites by varietal or type/);
+  assert.match(page, /Filter favourites by date/);
+  assert.match(page, /Filter journal by farm/);
+  assert.match(page, /Filter journal by rating/);
+  assert.match(page, /Filter journal by month/);
+  assert.match(page, /Filter journal by reaction/);
+  assert.match(page, /Open history/);
+  assert.match(page, /Open farm in Maps/);
+  assert.match(page, /my-wine-experience:\$\{authUserId\}/);
+  assert.match(page, /migrateDeviceJournalToAccount/);
+  assert.match(page, /personalFarms/);
+  assert.match(page, /makePersonalFarm/);
+  assert.match(page, /experienceStartedAt/);
+  assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
+  assert.match(await read("lib/auth.ts"), /linkWithPopup/);
+  assert.match(await read("app/register-service-worker.tsx"), /serviceWorker.register/);
+});
+
+test("cloud boundaries and privacy artifacts are present", async () => {
+  const [enrich, farms, firestore, storage, manifest, firebaseConfig, media, serviceWorker] = await Promise.all([
+    read("app/api/enrich/route.ts"), read("app/api/farms/search/route.ts"), read("firestore.rules"), read("storage.rules"), read("app/manifest.ts"), read("firebase.json"), read("lib/cloud-media.ts"), read("public/service-worker.js"), read("functions/src/index.ts"),
+  ]);
+  assert.match(enrich, /GEMINI_API_KEY/);
+  assert.match(enrich, /x-enrichment-job-secret/);
+  assert.match(farms, /places:searchText/);
+  assert.match(farms, /fallbackFarms/);
+  assert.match(firestore, /request\.auth\.uid/);
+  assert.match(storage, /request\.resource\.contentType/);
+  assert.match(manifest, /My Wine Experience/);
+  assert.match(firebaseConfig, /firestore\.rules/);
+  assert.match(media, /setDoc/);
+  assert.match(serviceWorker, /CACHE_NAME/);
+  assert.match(serviceWorker, /cache.put/);
+  assert.match(serviceWorker, /caches.delete/);
+  assert.match(media, /retainAudio/);
+  assert.match(await read("lib/offline-queue.ts"), /lastError/);
+  assert.match(await read("lib/offline-queue.ts"), /claimUnassignedMedia/);
+  assert.match(await read("lib/offline-queue.ts"), /removeQueuedMediaForExperience/);
+  assert.match(await read("lib/cloud-journal.ts"), /where\("experienceId"/);
+  assert.match(await read("lib/cloud-media.ts"), /item\.userId === userId/);
+  assert.match(await read("lib/cloud-media.ts"), /ensureEnrichmentJob/);
+  assert.match(await read("lib/cloud-journal.ts"), /saveEnrichmentJob/);
+  assert.match(firestore, /processingJobs/);
+  assert.match(firestore, /allow update: if false/);
+  assert.match(enrich, /x-enrichment-job-secret/);
+  assert.match(await read("functions/src/index.ts"), /onDocumentCreated/);
+  assert.match(await read("functions/src/index.ts"), /currentJobSnapshot/);
+  assert.match(await read("functions/src/index.ts"), /retainAudio/);
+  assert.match(await read("app/privacy/page.tsx"), /Audio and photos/);
+});

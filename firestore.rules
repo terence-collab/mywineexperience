@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owns(data) { return signedIn() && data.userId == request.auth.uid; }
+    function validReaction(value) { return value == 'Loved it' || value == 'Liked it' || value == 'Not for me'; }
+
+    match /users/{userId} {
+      allow read, update, delete: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId;
+
+      match /experiences/{experienceId} {
+        allow read, delete: if owns(resource.data);
+        allow create: if owns(request.resource.data)
+          && request.resource.data.userId == userId
+          && request.resource.data.wineCount >= 0
+          && request.resource.data.wineCount <= 7;
+        allow update: if owns(resource.data) && owns(request.resource.data)
+          && request.resource.data.wineCount >= 0
+          && request.resource.data.wineCount <= 7;
+
+        match /wines/{wineId} {
+          allow read, delete: if owns(resource.data);
+          allow create: if owns(request.resource.data)
+            && request.resource.data.userId == userId
+            && validReaction(request.resource.data.reaction);
+          allow update: if owns(resource.data) && owns(request.resource.data)
+            && validReaction(request.resource.data.reaction);
+
+          match /reflections/{reflectionId} {
+            allow read, delete: if owns(resource.data);
+            allow create, update: if owns(request.resource.data)
+              && request.resource.data.userId == userId;
+          }
+        }
+      }
+
+      match /processingJobs/{jobId} {
+        allow read: if owns(resource.data);
+        allow create: if owns(request.resource.data)
+          && request.resource.data.userId == userId
+          && request.resource.data.status == 'queued';
+        // Job state and extraction results are trusted-worker-only. The client
+        // may create a queued job, read its status, or delete it, but cannot
+        // mark work ready, alter retry counters, or inject provider output.
+        allow update: if false;
+        allow delete: if owns(resource.data);
+      }
+    }
+
+    match /farms/{farmId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+  }
+}
