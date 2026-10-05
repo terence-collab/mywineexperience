@@ -103,6 +103,8 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(enrich, /enrichment_started/);
   assert.match(enrich, /enrichment_completed/);
   assert.match(firestore, /confirmedName/);
+  assert.match(firestore, /data.status == 'draft'/);
+  assert.match(await read("lib/cloud-media.ts"), /Wine draft metadata is not synced yet/);
   assert.match(await read("lib/cloud-journal.ts"), /onSnapshot/);
   assert.match(await read("lib/cloud-journal.ts"), /Remove Storage objects first/);
   assert.match(await read("lib/cloud-media.ts"), /item\.userId === userId/);

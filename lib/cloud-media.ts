@@ -59,11 +59,18 @@ export async function uploadQueuedMedia(userId: string) {
         { merge: true },
       );
     } else if (db) {
-      await setDoc(
-        doc(db, "users", userId, "experiences", item.experienceId, "wines", item.wineId),
-        { userId, experienceId: item.experienceId, [`${item.kind}Path`]: path, ...(item.kind === "audio" ? { retainAudio: Boolean(item.retainAudio) } : {}), status: "ready", updatedAt: serverTimestamp() },
-        { merge: true },
-      );
+      const wineRef = doc(db, "users", userId, "experiences", item.experienceId, "wines", item.wineId);
+      const wineSnapshot = await getDoc(wineRef);
+      if (!wineSnapshot.exists()) throw new Error("Wine draft metadata is not synced yet.");
+      const wine = wineSnapshot.data() as { reaction?: string; status?: string };
+      await setDoc(wineRef, {
+        userId,
+        experienceId: item.experienceId,
+        [`${item.kind}Path`]: path,
+        ...(item.kind === "audio" ? { retainAudio: Boolean(item.retainAudio) } : {}),
+        status: wine.reaction ? "ready" : "draft",
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
       await ensureEnrichmentJob(userId, item);
     }
   }, (item) => item.userId === userId);

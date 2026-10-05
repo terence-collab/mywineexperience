@@ -182,7 +182,6 @@ async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSumm
     });
 
     await Promise.all((experience.wines ?? [])
-      .filter((wine): wine is Wine & { reaction: Reaction } => Boolean(wine.reaction))
       .flatMap((wine) => [
         saveCloudWine({
           id: String(wine.id),
@@ -1028,12 +1027,7 @@ export default function Home() {
           note: summary.note,
           location: summary.location,
         }),
-        ...wines
-          .filter((wine): wine is Wine & { reaction: Reaction } =>
-            Boolean(wine.reaction),
-          )
-          .map((wine) =>
-            saveCloudWine({
+        ...wines.map((wine) => saveCloudWine({
               id: String(wine.id),
               userId: uid,
               experienceId: summary.id,
@@ -1042,8 +1036,7 @@ export default function Home() {
               reaction: wine.reaction,
               status: toCloudStatus(wine.status),
               createdAt: Date.now(),
-            }),
-          ),
+        })),
       ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
   }
   function saveReflection() {

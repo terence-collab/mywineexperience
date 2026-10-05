@@ -23,8 +23,9 @@ service cloud.firestore {
         && data.name.size() <= 200
         && (!('confirmedName' in data) || (data.confirmedName is string && data.confirmedName.size() <= 200))
         && (!('note' in data) || (data.note is string && data.note.size() <= 2000))
-        && validReaction(data.reaction)
-        && (data.status == 'draft' || data.status == 'waiting_upload' || data.status == 'processing' || data.status == 'ready' || data.status == 'error');
+        && (data.status == 'draft' || data.status == 'waiting_upload' || data.status == 'processing' || data.status == 'ready' || data.status == 'error')
+        && ((data.status == 'draft' && (!('reaction' in data) || validReaction(data.reaction)))
+          || (data.status != 'draft' && ('reaction' in data && validReaction(data.reaction))));
     }
 
     match /users/{userId} {
