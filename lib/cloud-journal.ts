@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -124,6 +125,75 @@ export async function listExperiences(userId: string) {
     }));
     return { id: item.id, ...item.data(), wines } as CloudExperience;
   }));
+}
+
+/**
+ * Keep the journal current while background enrichment changes wine records.
+ * The top-level experience document does not change when a worker enriches a
+ * nested wine, so each experience gets its own wines listener.
+ */
+export function subscribeExperiences(
+  userId: string,
+  onChange: (items: CloudExperience[]) => void,
+  onError: (error: unknown) => void = () => undefined,
+) {
+  const firestore = requireDb();
+  const experiences = new Map<string, CloudExperience>();
+  const wineUnsubscribers = new Map<string, () => void>();
+
+  function emit() {
+    onChange([...experiences.values()].sort((left, right) => right.startedAt - left.startedAt));
+  }
+
+  const experienceUnsubscribe = onSnapshot(
+    query(collection(firestore, "users", userId, "experiences"), orderBy("startedAt", "desc")),
+    (snapshot) => {
+      const currentIds = new Set(snapshot.docs.map((item) => item.id));
+      for (const [experienceId, unsubscribe] of wineUnsubscribers) {
+        if (!currentIds.has(experienceId)) {
+          unsubscribe();
+          wineUnsubscribers.delete(experienceId);
+          experiences.delete(experienceId);
+        }
+      }
+
+      for (const item of snapshot.docs) {
+        const existing = experiences.get(item.id);
+        experiences.set(item.id, { id: item.id, ...item.data(), wines: existing?.wines } as CloudExperience);
+        if (wineUnsubscribers.has(item.id)) continue;
+
+        const unsubscribe = onSnapshot(
+          collection(item.ref, "wines"),
+          (wineSnapshot) => {
+            void Promise.all(wineSnapshot.docs.map(async (wine) => {
+              const reflectionsSnapshot = await getDocs(collection(wine.ref, "reflections"));
+              return {
+                id: wine.id,
+                ...wine.data(),
+                reflections: reflectionsSnapshot.docs.map((reflection) => ({ id: reflection.id, ...reflection.data() })),
+              } as CloudWine;
+            }))
+              .then((wines) => {
+                const current = experiences.get(item.id);
+                if (current) experiences.set(item.id, { ...current, wines });
+                emit();
+              })
+              .catch(onError);
+          },
+          onError,
+        );
+        wineUnsubscribers.set(item.id, unsubscribe);
+      }
+      emit();
+    },
+    onError,
+  );
+
+  return () => {
+    experienceUnsubscribe();
+    for (const unsubscribe of wineUnsubscribers.values()) unsubscribe();
+    wineUnsubscribers.clear();
+  };
 }
 
 export async function deleteExperience(userId: string, experienceId: string) {

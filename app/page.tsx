@@ -14,10 +14,10 @@ import {
 import { auth, firebaseEnabled } from "../lib/firebase";
 import {
   deleteExperience as deleteCloudExperience,
-  listExperiences,
   saveExperience as saveCloudExperience,
   saveReflection as saveCloudReflection,
   saveWine as saveCloudWine,
+  subscribeExperiences,
   toCloudStatus,
 } from "../lib/cloud-journal";
 import { getMediaDownloadUrl, uploadQueuedMedia } from "../lib/cloud-media";
@@ -764,10 +764,11 @@ export default function Home() {
   ]);
   useEffect(() => {
     if (authUserId === "device") return;
-    void listExperiences(authUserId)
-          .then((items) =>
-            setExperiences((current) => {
-              const cloudItems = items.map((item) => ({
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = subscribeExperiences(authUserId, (items) => {
+        setExperiences((current) => {
+          const cloudItems = items.map((item) => ({
                 id: item.id,
                 farmName: item.farmName,
                  town: item.farmTown ?? "Western Cape",
@@ -800,12 +801,15 @@ export default function Home() {
                     createdAt: new Date(reflection.createdAt).toISOString(),
                   })),
                 })),
-              }));
-              const cloudIds = new Set(cloudItems.map((item) => item.id));
-              return [...cloudItems, ...current.filter((item) => !cloudIds.has(item.id))];
-            }),
-          )
-           .catch(() => undefined);
+          }));
+          const cloudIds = new Set(cloudItems.map((item) => item.id));
+          return [...cloudItems, ...current.filter((item) => !cloudIds.has(item.id))];
+        });
+      }, () => undefined);
+    } catch {
+      // Local-first capture remains available if Firebase is temporarily unavailable.
+    }
+    return () => unsubscribe?.();
   }, [authUserId]);
   useEffect(() => {
     if (!hydrated || authUserId === "device" || !firebaseEnabled || !experiences.length || syncedCloudAccounts.current.has(authUserId)) return;
