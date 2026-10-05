@@ -8,8 +8,8 @@ Production is currently running from the `wine-experience-b8864` Firebase projec
 
 ## Firebase
 
-- [ ] Create separate development and production Firebase projects.
-- [ ] Register a Web App in each project. *(Production Web App is configured; staging remains pending.)*
+- [ ] Create a separate staging/development Firebase project. *(Production project is `wine-experience-b8864`; staging remains pending.)*
+- [x] Register the production Web App. *(The staging Web App remains pending until the staging project exists.)*
 - [x] Enable Email/Password and passwordless email link providers. *(Apple sign-in is intentionally excluded from this build.)*
 - [x] Create Firestore in Native mode and choose a region.
 - [x] Create Cloud Storage and choose a matching region where possible.
@@ -40,8 +40,8 @@ Production is currently running from the `wine-experience-b8864` Firebase projec
 
 - [x] Connect the repository to Vercel.
 - [ ] Add non-production environment variables against a separate staging Firebase project. *(Production variables are configured; production secrets are not copied to Preview/Development.)*
-- [ ] Keep `NEXT_PUBLIC_FIREBASE_*` values public configuration only; keep Maps, Gemini, and job secrets server-only.
-- [ ] Add the production domain and preview domain to Firebase Auth.
+- [x] Keep `NEXT_PUBLIC_FIREBASE_*` values public configuration only; keep Maps, Gemini, and job secrets server-only.
+- [x] Add the production domain and preview domain to Firebase Auth.
 - [x] Confirm GitHub Actions is green on the current `master` production branch.
 - [ ] Deploy a preview and manually test the complete phone-sized capture flow.
 
