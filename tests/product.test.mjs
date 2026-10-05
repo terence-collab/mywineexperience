@@ -74,6 +74,8 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("lib/cloud-media.ts"), /item\.userId === userId/);
   assert.match(await read("lib/cloud-media.ts"), /ensureEnrichmentJob/);
   assert.match(await read("lib/cloud-media.ts"), /otherPendingMedia/);
+  assert.match(await read("lib/cloud-media.ts"), /wineSnapshot/);
+  assert.match(await read("lib/cloud-media.ts"), /wine\?\.audioPath/);
   assert.match(await read("lib/cloud-journal.ts"), /saveEnrichmentJob/);
   assert.match(firestore, /processingJobs/);
   assert.match(firestore, /allow update: if false/);

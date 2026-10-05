@@ -16,14 +16,19 @@ async function ensureEnrichmentJob(userId: string, item: QueuedMedia) {
     queued.wineId === item.wineId,
   );
   if (otherPendingMedia) return;
+  const jobRef = doc(db, "users", userId, "processingJobs", `${item.experienceId}-${item.wineId}`);
+  if ((await getDoc(jobRef)).exists()) return;
+  const wineRef = doc(db, "users", userId, "experiences", item.experienceId, "wines", item.wineId);
+  const wineSnapshot = await getDoc(wineRef);
+  const wine = wineSnapshot.data() as { audioPath?: string; photoPath?: string } | undefined;
   const mediaKinds = [...new Set([
     item.kind,
+    ...(wine?.audioPath ? ["audio" as const] : []),
+    ...(wine?.photoPath ? ["photo" as const] : []),
     ...queuedItems
       .filter((queued) => queued.userId === userId && queued.experienceId === item.experienceId && queued.wineId === item.wineId)
       .map((queued) => queued.kind),
   ])];
-  const jobRef = doc(db, "users", userId, "processingJobs", `${item.experienceId}-${item.wineId}`);
-  if ((await getDoc(jobRef)).exists()) return;
   await setDoc(jobRef, {
     id: `${item.experienceId}-${item.wineId}`,
     userId,
