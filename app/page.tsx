@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   completePasswordlessSignIn,
   observeUser,
@@ -22,7 +22,7 @@ import {
   toCloudStatus,
 } from "../lib/cloud-journal";
 import { getMediaDownloadUrl, uploadQueuedMedia } from "../lib/cloud-media";
-import { claimUnassignedMedia, enqueueMedia, listQueuedMedia, removeQueuedMediaForExperience } from "../lib/offline-queue";
+import { claimUnassignedMedia, enqueueMedia, listQueuedMedia, removeQueuedMedia, removeQueuedMediaForExperience } from "../lib/offline-queue";
 import { trackEvent } from "../lib/telemetry";
 
 type Reaction = "Loved it" | "Liked it" | "Not for me";
@@ -251,6 +251,7 @@ function CaptureSheet({
   onClose,
   onSave,
   onSaveDraft,
+  onAutoSaveDraft,
 }: {
   wines: Wine[];
   experienceId: string;
@@ -258,7 +259,8 @@ function CaptureSheet({
   draft?: Wine;
   onClose: () => void;
   onSave: (wine: Wine) => void;
-  onSaveDraft: (wine: Wine, photoFile?: File) => void;
+  onSaveDraft: (wine: Wine) => void;
+  onAutoSaveDraft: (wine: Wine) => void;
 }) {
   const [reaction, setReaction] = useState<Reaction | undefined>(draft?.reaction);
   const [name, setName] = useState(draft?.name === "New wine" ? "" : draft?.name ?? "");
@@ -269,10 +271,10 @@ function CaptureSheet({
   const [audioCaptured, setAudioCaptured] = useState(Boolean(draft?.audio));
   const [photo, setPhoto] = useState<string>();
   const [photoCaptured, setPhotoCaptured] = useState(Boolean(draft?.photo));
-  const [photoFile, setPhotoFile] = useState<File>();
   const [captureMessage, setCaptureMessage] = useState("");
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
+  const photoQueueId = useRef<string | undefined>(undefined);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!recording) return;
@@ -326,26 +328,29 @@ function CaptureSheet({
   function choosePhoto(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    const wineId = draft?.id ?? wines.length + 1;
+    const previousQueueId = photoQueueId.current;
+    if (previousQueueId) void removeQueuedMedia(previousQueueId);
+    const queueId = crypto.randomUUID();
+    photoQueueId.current = queueId;
+    void enqueueMedia({
+      id: queueId,
+      userId: auth?.currentUser?.uid,
+      experienceId,
+      wineId: String(wineId),
+      kind: "photo",
+      blob: file,
+    });
     const reader = new FileReader();
     reader.onload = () => {
       setPhoto(String(reader.result));
       setPhotoCaptured(true);
-      setPhotoFile(file);
     };
     reader.readAsDataURL(file);
   }
   function save() {
     if (!reaction) return;
     const wineId = draft?.id ?? wines.length + 1;
-    if (photoFile)
-      void enqueueMedia({
-        id: crypto.randomUUID(),
-        userId: auth?.currentUser?.uid,
-        experienceId,
-        wineId: String(wineId),
-        kind: "photo",
-        blob: photoFile,
-      });
     onSave({
       id: wineId,
       name: name.trim() || "New wine",
@@ -373,8 +378,22 @@ function CaptureSheet({
       tone: wines.length % 2 ? "rose" : "gold",
       audio: audioCaptured,
       photo: photoCaptured,
-    }, photoFile);
+    });
   }
+  useEffect(() => {
+    if (!name.trim() && !audioCaptured && !photoCaptured && !reaction) return;
+    onAutoSaveDraft({
+      id: draft?.id ?? wines.length + 1,
+      name: name.trim() || "New wine",
+      note: note.trim() || undefined,
+      detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
+      reaction,
+      status: "Draft",
+      tone: draft?.tone ?? (wines.length % 2 ? "rose" : "gold"),
+      audio: audioCaptured,
+      photo: photoCaptured,
+    });
+  }, [audioCaptured, draft?.id, draft?.tone, name, note, onAutoSaveDraft, photoCaptured, reaction, wines.length]);
   return (
     <div className="modal-backdrop" onClick={saveDraft}>
       <div
@@ -963,17 +982,11 @@ export default function Home() {
     setCaptureOpen(false);
     trackEvent("wine_saved", { kind: wine.audio || wine.photo ? "media" : "manual", online: navigator.onLine });
   }
-  function saveWineDraft(wine: Wine, photoFile?: File) {
-    if (photoFile)
-      void enqueueMedia({
-        id: crypto.randomUUID(),
-        userId: auth?.currentUser?.uid,
-        experienceId: activeExperienceId || "draft-experience",
-        wineId: String(wine.id),
-        kind: "photo",
-        blob: photoFile,
-      });
+  const updateWineDraft = useCallback((wine: Wine) => {
     setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
+  }, []);
+  function saveWineDraft(wine: Wine) {
+    updateWineDraft(wine);
     setCaptureDraft(undefined);
     setCaptureOpen(false);
   }
@@ -1559,6 +1572,7 @@ export default function Home() {
           onClose={() => { setCaptureDraft(undefined); setCaptureOpen(false); }}
           onSave={saveWine}
           onSaveDraft={saveWineDraft}
+          onAutoSaveDraft={updateWineDraft}
         />
       )}
       {endOpen && (
