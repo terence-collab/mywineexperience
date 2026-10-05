@@ -99,6 +99,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("functions/src/index.ts"), /confirmedName/);
   assert.match(enrich, /evidenceSources/);
   assert.match(enrich, /farmName/);
+  assert.match(enrich, /store: false/);
   assert.match(enrich, /enrichment_started/);
   assert.match(enrich, /enrichment_completed/);
   assert.match(firestore, /confirmedName/);

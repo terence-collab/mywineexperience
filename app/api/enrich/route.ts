@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
     headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash", input, response_format: { type: "text", mime_type: "application/json", schema: wineSchema } }),
+    body: JSON.stringify({ model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash", store: false, input, response_format: { type: "text", mime_type: "application/json", schema: wineSchema } }),
   });
   if (!response.ok) {
     console.info("wine_experience_event", "enrichment_failed", { provider: "gemini", providerStatus: response.status });
