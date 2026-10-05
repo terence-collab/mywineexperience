@@ -6,6 +6,16 @@ import { flushQueuedMedia, listQueuedMedia, type QueuedMedia } from "./offline-q
 async function ensureEnrichmentJob(userId: string, item: QueuedMedia) {
   if (!db || item.wineId === "experience") return;
   const queuedItems = await listQueuedMedia();
+  // Do not start the worker while another capture for the same wine is still
+  // queued. This avoids a race where audio uploads first, the job runs, and
+  // the still-queued photo is missing from the worker's media set.
+  const otherPendingMedia = queuedItems.some((queued) =>
+    queued.id !== item.id &&
+    queued.userId === userId &&
+    queued.experienceId === item.experienceId &&
+    queued.wineId === item.wineId,
+  );
+  if (otherPendingMedia) return;
   const mediaKinds = [...new Set([
     item.kind,
     ...queuedItems
