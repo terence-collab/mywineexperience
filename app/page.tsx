@@ -4,10 +4,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  completeGoogleRedirectSignIn,
   completePasswordlessSignIn,
   observeUser,
   sendPasswordlessLink,
   signInWithEmail,
+  signInWithGoogle,
   signOutUser,
   signUpWithEmail,
 } from "../lib/auth";
@@ -562,6 +564,14 @@ function AccountAccess() {
       setMessage("That did not work. Check your details and try again.");
     }
   }
+  async function continueWithGoogle() {
+    setMessage("");
+    try {
+      await signInWithGoogle();
+    } catch {
+      setMessage("Google sign-in did not work. Please try again.");
+    }
+  }
   return (
     <form className="account-form" onSubmit={submit}>
       <div className="account-form-heading">
@@ -579,6 +589,11 @@ function AccountAccess() {
           {mode === "sign-in" ? "Create account" : "I already have one"}
         </button>
       </div>
+      <div className="auth-divider" aria-hidden="true"><span>or</span></div>
+      <button className="google-button" type="button" onClick={() => void continueWithGoogle()}>
+        <span className="google-mark" aria-hidden="true">G</span>
+        Continue with Google
+      </button>
       <input
         type="email"
         value={email}
@@ -771,6 +786,7 @@ export default function Home() {
     // Complete magic-link sign-in at the app shell so returning users do not
     // need to open Profile before Firebase can restore their account.
     void completePasswordlessSignIn().catch(() => undefined);
+    void completeGoogleRedirectSignIn().catch(() => undefined);
   }, []);
   useEffect(() => observeUser((user) => {
     if (user) migrateDeviceJournalToAccount(user.uid);

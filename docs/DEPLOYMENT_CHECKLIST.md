@@ -11,6 +11,7 @@ Production is currently running from the `wine-experience-b8864` Firebase projec
 - [ ] Create a separate staging/development Firebase project. *(Production project is `wine-experience-b8864`; staging remains pending.)*
 - [x] Register the production Web App. *(The staging Web App remains pending until the staging project exists.)*
 - [x] Enable Email/Password and passwordless email link providers. *(Apple sign-in is intentionally excluded from this build.)*
+- [ ] Enable Google sign-in provider in the production Firebase project. *(The Profile button is implemented; this console switch is still required.)*
 - [x] Create Firestore in Native mode and choose a region.
 - [x] Create Cloud Storage and choose a matching region where possible.
 - [x] Add localhost, preview, and production domains to Firebase Auth authorized domains.

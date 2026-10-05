@@ -10,7 +10,7 @@ In the Firebase console:
 
 1. Create the project and enable billing if required by the selected services.
 2. Register a Web App and copy its public Firebase configuration.
-3. Enable Email/Password and passwordless email-link sign-in. Apple sign-in is intentionally not part of this build.
+3. Enable Email/Password, passwordless email-link, and Google sign-in. Apple sign-in is intentionally not part of this build.
 4. Create Firestore and Storage in the required region.
 5. Deploy the checked-in rules and indexes:
 

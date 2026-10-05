@@ -1,8 +1,12 @@
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
+  GoogleAuthProvider,
   isSignInWithEmailLink,
   onAuthStateChanged,
   sendSignInLinkToEmail,
+  signInWithPopup,
+  signInWithRedirect,
   signInWithEmailLink,
   signInWithEmailAndPassword,
   signOut,
@@ -26,6 +30,23 @@ export async function signUpWithEmail(email: string, password: string) {
 
 export async function signInWithEmail(email: string, password: string) {
   return signInWithEmailAndPassword(requireAuth(), email, password);
+}
+
+export async function signInWithGoogle() {
+  const configuredAuth = requireAuth();
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  try {
+    return await signInWithPopup(configuredAuth, provider);
+  } catch (error) {
+    if ((error as { code?: string }).code !== "auth/popup-blocked") throw error;
+    await signInWithRedirect(configuredAuth, provider);
+    return null;
+  }
+}
+
+export async function completeGoogleRedirectSignIn() {
+  return getRedirectResult(requireAuth());
 }
 
 export async function sendPasswordlessLink(email: string) {
