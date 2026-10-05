@@ -1,14 +1,18 @@
 # My Wine Experience deployment checklist
 
+## Current verified state
+
+Production is currently running from the `wine-experience-b8864` Firebase project and the `master` branch of the connected Vercel project. Production secrets are configured server-side only. Preview and development do not inherit production Maps/Gemini secrets; configure them only after a separate staging Firebase project is available.
+
 ## Firebase
 
 - [ ] Create separate development and production Firebase projects.
-- [ ] Register a Web App in each project.
-- [ ] Enable Email/Password and passwordless email link providers.
-- [ ] Create Firestore in Native mode and choose a region.
-- [ ] Create Cloud Storage and choose a matching region where possible.
-- [ ] Add localhost, preview, and production domains to Firebase Auth authorized domains.
-- [ ] Deploy `firestore.rules`, `firestore.indexes.json`, and `storage.rules`.
+- [ ] Register a Web App in each project. *(Production Web App is configured; staging remains pending.)*
+- [x] Enable Email/Password and passwordless email link providers. *(Apple sign-in is intentionally excluded from this build.)*
+- [x] Create Firestore in Native mode and choose a region.
+- [x] Create Cloud Storage and choose a matching region where possible.
+- [x] Add localhost, preview, and production domains to Firebase Auth authorized domains.
+- [x] Deploy `firestore.rules`, `firestore.indexes.json`, and `storage.rules`.
 - [ ] Test the rules against emulator data before using production data.
 
 ## Google Cloud / Maps
@@ -21,22 +25,22 @@
 
 ## Gemini
 
-- [ ] Import/select the Google Cloud project in Google AI Studio.
-- [ ] Create a restricted Gemini API key.
-- [ ] Choose the production model and record it as `GEMINI_MODEL`.
-- [ ] Generate a high-entropy `ENRICHMENT_JOB_SECRET`.
-- [ ] Choose the trusted worker: Firebase Functions, Cloud Run, or another queue worker.
+- [x] Import/select the shared `Smile and Whistle` Google Cloud project in Google AI Studio.
+- [x] Create a restricted Gemini API key.
+- [x] Choose the production model and record it as `GEMINI_MODEL`.
+- [x] Generate a high-entropy `ENRICHMENT_JOB_SECRET`.
+- [x] Choose Firebase Functions as the trusted worker.
 - [x] Firebase Functions worker is implemented in `functions/src/index.ts`; configure it to call the deployed `/api/enrich` endpoint and deploy it.
-- [ ] Set `ENRICHMENT_ENDPOINT_URL` in the Functions runtime and the same `ENRICHMENT_JOB_SECRET` in Firebase Secret Manager and the web host.
-- [ ] Define retry, idempotency, and failed-processing behavior before real users.
+- [x] Set `ENRICHMENT_ENDPOINT_URL` in the Functions runtime and the same `ENRICHMENT_JOB_SECRET` in Firebase Secret Manager and the web host.
+- [x] Define retry, idempotency, and failed-processing behavior before real users.
 
 ## Vercel / GitHub
 
-- [ ] Connect the repository to Vercel.
-- [ ] Add environment variables separately for Development, Preview, and Production.
+- [x] Connect the repository to Vercel.
+- [ ] Add non-production environment variables against a separate staging Firebase project. *(Production variables are configured; production secrets are not copied to Preview/Development.)*
 - [ ] Keep `NEXT_PUBLIC_FIREBASE_*` values public configuration only; keep Maps, Gemini, and job secrets server-only.
 - [ ] Add the production domain and preview domain to Firebase Auth.
-- [ ] Confirm GitHub Actions is green before enabling protected `main`.
+- [x] Confirm GitHub Actions is green on the current `master` production branch.
 - [ ] Deploy a preview and manually test the complete phone-sized capture flow.
 
 ## Required environment variables
