@@ -662,7 +662,16 @@ export default function Home() {
     const cutoff = favouriteDateFilter === "30" ? filterReferenceTime - 30 * 24 * 60 * 60 * 1000 : favouriteDateFilter === "365" ? filterReferenceTime - 365 * 24 * 60 * 60 * 1000 : 0;
     return experiences.flatMap((experienceItem) => (experienceItem.wines ?? []).map((wine) => ({ wine, experience: experienceItem }))).filter(({ wine, experience: experienceItem }) => {
       const varietal = wine.suggestedIdentity?.varietal ?? "";
-      const matchesSearch = `${wine.name} ${wine.detail} ${experienceItem.farmName}`.toLowerCase().includes(favouriteSearch.toLowerCase());
+      const matchesSearch = [
+        wine.name,
+        wine.detail,
+        wine.transcript,
+        wine.summary,
+        wine.suggestedIdentity?.producer,
+        wine.suggestedIdentity?.varietal,
+        wine.suggestedIdentity?.vintage,
+        experienceItem.farmName,
+      ].filter(Boolean).join(" ").toLowerCase().includes(favouriteSearch.toLowerCase());
       const matchesFarm = favouriteFarmFilter === "all" || experienceItem.farmName === favouriteFarmFilter;
       const matchesType = favouriteTypeFilter === "all" || varietal === favouriteTypeFilter;
       const matchesDate = !cutoff || Date.parse(experienceItem.startedAt) >= cutoff;
@@ -673,7 +682,16 @@ export default function Home() {
   const needsReviewCount = useMemo(() => experiences.reduce((total, item) => total + (item.wines ?? []).filter((wine) => wine.suggestedIdentity && wine.suggestionStatus !== "confirmed").length, 0), [experiences]);
   const visibleExperiences = useMemo(() => experiences.filter((item) => {
     const month = item.startedAt.slice(0, 7);
-    const matchesSearch = `${item.farmName} ${item.town} ${item.note ?? ""}`.toLowerCase().includes(journalSearch.toLowerCase());
+    const wineSearchText = (item.wines ?? []).flatMap((wine) => [
+      wine.name,
+      wine.detail,
+      wine.transcript,
+      wine.summary,
+      wine.suggestedIdentity?.producer,
+      wine.suggestedIdentity?.varietal,
+      wine.suggestedIdentity?.vintage,
+    ]).filter(Boolean).join(" ");
+    const matchesSearch = `${item.farmName} ${item.town} ${item.note ?? ""} ${wineSearchText}`.toLowerCase().includes(journalSearch.toLowerCase());
     const matchesFarm = journalFarmFilter === "all" || item.farmName === journalFarmFilter;
     const matchesRating = journalRatingFilter === "all" || item.rating === Number(journalRatingFilter);
     const matchesMonth = journalMonthFilter === "all" || month === journalMonthFilter;
