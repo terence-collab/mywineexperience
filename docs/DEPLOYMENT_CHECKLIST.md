@@ -4,8 +4,7 @@
 
 - [ ] Create separate development and production Firebase projects.
 - [ ] Register a Web App in each project.
-- [ ] Enable Email/Password, passwordless email link, and Apple providers.
-- [ ] Configure Apple Service ID, Team ID, key ID, private key, and Firebase return URL.
+- [ ] Enable Email/Password and passwordless email link providers.
 - [ ] Create Firestore in Native mode and choose a region.
 - [ ] Create Cloud Storage and choose a matching region where possible.
 - [ ] Add localhost, preview, and production domains to Firebase Auth authorized domains.
@@ -14,10 +13,10 @@
 
 ## Google Cloud / Maps
 
-- [ ] Select a Google Cloud project with billing enabled.
-- [ ] Enable Places API (New).
-- [ ] Create a restricted server-side Maps key.
-- [ ] Restrict the key to Places API (New) and the expected deployment usage.
+- [x] Use the existing `Smile and Whistle` Google Cloud project with billing enabled.
+- [x] Enable Places API (New).
+- [x] Use the existing restricted server-side Maps key for Wine Experience.
+- [x] Add Places API (New) to that key's API restrictions.
 - [ ] Confirm quota alerts and budget alerts.
 
 ## Gemini

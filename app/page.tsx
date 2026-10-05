@@ -7,7 +7,6 @@ import {
   completePasswordlessSignIn,
   observeUser,
   sendPasswordlessLink,
-  signInWithApple,
   signInWithEmail,
   signOutUser,
   signUpWithEmail,
@@ -572,17 +571,6 @@ function AccountAccess() {
           Use a passwordless email link
         </button>
       )}
-      <button
-        type="button"
-        className="apple-button"
-        onClick={() =>
-          signInWithApple().catch(() =>
-            setMessage("Apple sign-in is not available yet."),
-          )
-        }
-      >
-        Continue with Apple
-      </button>
       {message && <p className="form-message">{message}</p>}
     </form>
   );
