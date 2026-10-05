@@ -1,5 +1,7 @@
 # My Wine Experience deployment checklist
 
+For the remaining account- and device-dependent work, follow [`EXTERNAL_RELEASE_STEPS.md`](./EXTERNAL_RELEASE_STEPS.md).
+
 ## Current verified state
 
 Production is currently running from the `wine-experience-b8864` Firebase project and the `master` branch of the connected Vercel project. Production secrets are configured server-side only. Preview and development do not inherit production Maps/Gemini secrets; configure them only after a separate staging Firebase project is available.
