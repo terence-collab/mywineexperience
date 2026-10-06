@@ -652,9 +652,15 @@ body::before {
   padding: 10px;
   background: rgba(255, 255, 255, .3);
   box-shadow: 16px 22px 42px rgba(111, 126, 134, .15), inset 0 1px 0 rgba(255, 255, 255, .86);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
 }
 .landing-card .account-form { background: rgba(255, 255, 255, .57); }
-.landing-steps article { background: rgba(255, 255, 255, .42); }
+.landing-steps article {
+  background: rgba(255, 255, 255, .42);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
 .landing-steps h3 { color: #b17d18; }
 .landing-footer { border-top-color: rgba(164, 184, 194, .46); color: #74818a; }
 .landing-footer a { color: #a8781d; }
