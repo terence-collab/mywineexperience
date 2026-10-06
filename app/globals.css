@@ -751,6 +751,20 @@ body::before {
   background: #ffffff;
 }
 
+/* The map is the product's first working surface, so bring it into view sooner. */
+.page-content-map {
+  padding-top: 26px;
+}
+
+.page-content-map .page-heading {
+  margin-bottom: 22px;
+}
+
+.page-content-map .page-heading h1 {
+  font-size: clamp(40px, 5.2vw, 66px);
+  line-height: .9;
+}
+
 /* Keep the four navigation destinations centered as one balanced control group. */
 .bottom-nav {
   display: flex;
@@ -778,4 +792,6 @@ body::before {
 @media (max-width: 700px) {
   .bottom-nav-items { width: 100%; }
   .bottom-nav button { width: min(100%, 82px); }
+  .page-content-map { padding-top: 20px; }
+  .page-content-map .page-heading { margin-bottom: 18px; }
 }

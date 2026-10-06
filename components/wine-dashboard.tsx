@@ -1148,7 +1148,7 @@ export default function WineDashboard() {
            <button className="avatar" aria-label="Open profile" onClick={() => setTab("profile")}>T</button>
         </div>
       </header>
-      <section className="page-content">
+      <section className={`page-content page-content-${tab}`}>
         {tab === "map" && (
           <>
             <div className="page-heading">
