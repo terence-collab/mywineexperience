@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 type Coordinate = { latitude: number; longitude: number };
 export type MapFarm = { name: string; town: string; top: string; left: string; location?: Coordinate; visited?: boolean; favourite?: boolean };
 type GoogleMap = { panTo: (position: { lat: number; lng: number }) => void; setZoom: (zoom: number) => void };
-type GoogleMarker = { map: GoogleMap | null; addListener: (event: string, callback: () => void) => void };
-type GoogleNamespace = { maps: { importLibrary: (name: "maps" | "marker") => Promise<Record<string, unknown>> } };
+type GoogleMarker = { setMap: (map: GoogleMap | null) => void; addListener: (event: string, callback: () => void) => void };
+type GoogleNamespace = { maps: { Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap; Marker: new (options: Record<string, unknown>) => GoogleMarker } };
 
 let mapsLoader: Promise<GoogleNamespace | null> | undefined;
 
@@ -16,19 +16,23 @@ function loadGoogleMaps(apiKey: string) {
     const existing = document.getElementById("google-maps-js") as HTMLScriptElement | null;
     if (existing) {
       const currentGoogle = (window as unknown as { google?: GoogleNamespace }).google;
-      if (currentGoogle?.maps?.importLibrary) {
+      if (currentGoogle?.maps?.Map) {
         resolve(currentGoogle);
         return;
       }
       existing.addEventListener("load", () => resolve((window as unknown as { google?: GoogleNamespace }).google ?? null), { once: true });
       return;
     }
+    const callbackName = "__wineExperienceMapsReady";
+    (window as unknown as Record<string, unknown>)[callbackName] = () => {
+      resolve((window as unknown as { google?: GoogleNamespace }).google ?? null);
+      delete (window as unknown as Record<string, unknown>)[callbackName];
+    };
     const script = document.createElement("script");
     script.id = "google-maps-js";
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async`;
-    script.onload = () => resolve((window as unknown as { google?: GoogleNamespace }).google ?? null);
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async&callback=${callbackName}`;
     script.onerror = () => resolve(null);
     document.head.appendChild(script);
   });
@@ -50,9 +54,7 @@ export function GoogleMapSurface({ farms, selectedFarm, onSelect }: { farms: Map
     void loadGoogleMaps(apiKey).then(async (google) => {
       if (cancelled || !google || !mapElement.current) { if (!cancelled) setMapState("fallback"); return; }
       try {
-        const mapsLibrary = await google.maps.importLibrary("maps");
-        const MapConstructor = mapsLibrary.Map as new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap;
-        mapRef.current = new MapConstructor(mapElement.current, {
+        mapRef.current = new google.maps.Map(mapElement.current, {
           center: { lat: -33.86, lng: 18.82 }, zoom: 10, disableDefaultUI: true, zoomControl: true, gestureHandling: "cooperative",
           styles: [
             { elementType: "geometry", stylers: [{ color: "#ebe8dd" }] },
@@ -76,18 +78,15 @@ export function GoogleMapSurface({ farms, selectedFarm, onSelect }: { farms: Map
   useEffect(() => {
     const google = (window as unknown as { google?: GoogleNamespace }).google;
     if (!mapRef.current || !google) return;
-    void google.maps.importLibrary("marker").then((markerLibrary) => {
-      const MarkerConstructor = markerLibrary.AdvancedMarkerElement as new (options: Record<string, unknown>) => GoogleMarker;
-      markersRef.current.forEach((marker) => { marker.map = null; });
-      markersRef.current = farms.filter((farm) => farm.location).map((farm) => {
-        const marker = new MarkerConstructor({
-          map: mapRef.current, position: { lat: farm.location!.latitude, lng: farm.location!.longitude }, title: farm.name,
-          gmpClickable: true,
-        });
-        marker.addListener("click", () => onSelectRef.current(farm));
-        return marker;
+    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current = farms.filter((farm) => farm.location).map((farm) => {
+      const marker = new google.maps.Marker({
+        map: mapRef.current, position: { lat: farm.location!.latitude, lng: farm.location!.longitude }, title: farm.name,
+        label: { text: "●", color: farm.favourite ? "#713247" : "#8d9678", fontSize: "24px" },
       });
-    }).catch(() => undefined);
+      marker.addListener("click", () => onSelectRef.current(farm));
+      return marker;
+    });
   }, [farms, mapState]);
 
   useEffect(() => {
