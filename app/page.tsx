@@ -26,11 +26,12 @@ import {
 import { getMediaDownloadUrl, uploadQueuedMedia } from "../lib/cloud-media";
 import { claimUnassignedMedia, enqueueMedia, listQueuedMedia, removeQueuedMedia, removeQueuedMediaForExperience } from "../lib/offline-queue";
 import { trackEvent } from "../lib/telemetry";
+import { GoogleMapSurface, type MapFarm } from "../components/google-map-surface";
 
 type Reaction = "Loved it" | "Liked it" | "Not for me";
 type Tab = "map" | "journal" | "favourites" | "profile";
 type FarmFilter = "all" | "visited" | "favourites";
-type FarmSearchResult = { id: string; name: string; town: string; province: string; source: string };
+type FarmSearchResult = { id: string; name: string; town: string; province: string; source: string; location?: { latitude: number; longitude: number } };
 type Wine = {
   id: number;
   name: string;
@@ -73,6 +74,7 @@ type Farm = {
   left: string;
   visited: boolean;
   favourite?: boolean;
+  location?: { latitude: number; longitude: number };
 };
 type ExperienceSummary = {
   id: string;
@@ -99,6 +101,7 @@ const farms: Farm[] = [
     left: "57%",
     visited: true,
     favourite: true,
+    location: { latitude: -33.8496, longitude: 18.9869 },
   },
   {
     name: "Babylonstoren",
@@ -107,6 +110,7 @@ const farms: Farm[] = [
     top: "38%",
     left: "41%",
     visited: true,
+    location: { latitude: -33.8084, longitude: 18.8456 },
   },
   {
     name: "Klein Constantia",
@@ -115,6 +119,7 @@ const farms: Farm[] = [
     top: "64%",
     left: "66%",
     visited: false,
+    location: { latitude: -34.0261, longitude: 18.4324 },
   },
   {
     name: "Jordan Wine Estate",
@@ -123,11 +128,12 @@ const farms: Farm[] = [
     top: "54%",
     left: "28%",
     visited: false,
+    location: { latitude: -33.889, longitude: 18.828 },
   },
 ];
 const initialWines: Wine[] = [];
 
-function makePersonalFarm(name: string, town: string, note = "Private place snapshot"): Farm {
+function makePersonalFarm(name: string, town: string, note = "Private place snapshot", location?: { latitude: number; longitude: number }): Farm {
   const seed = [...name].reduce((total, character) => total + character.charCodeAt(0), 0);
   return {
     name,
@@ -136,6 +142,7 @@ function makePersonalFarm(name: string, town: string, note = "Private place snap
     top: `${24 + (seed % 52)}%`,
     left: `${22 + ((seed * 7) % 58)}%`,
     visited: false,
+    location,
   };
 }
 
@@ -1294,7 +1301,7 @@ export default function Home() {
                       key={result.id}
                       onClick={() => {
                         const local = allFarms.find((farm) => farm.name.toLowerCase() === result.name.toLowerCase());
-                        rememberFarm(local ?? makePersonalFarm(result.name, result.town));
+                        rememberFarm(local ?? makePersonalFarm(result.name, result.town, "Google place", result.location));
                         setSearch(result.name);
                         setSearchResults([]);
                       }}
@@ -1309,21 +1316,11 @@ export default function Home() {
                   Use “{search.trim()}” as a private place
                 </button>
               )}
-              <div className="map-art">
-                <div className="map-lines line-one" />
-                <div className="map-lines line-two" />
-                {filtered.map((farm) => (
-                  <button
-                    key={farm.name}
-                    className={`map-pin ${selectedFarm.name === farm.name ? "active" : ""} ${farm.visited || farmHistory.get(farm.name)?.visited ? "visited" : ""} ${farm.favourite || farmHistory.get(farm.name)?.favourite ? "favourite" : ""}`}
-                    style={{ top: farm.top, left: farm.left }}
-                    onClick={() => setSelectedFarm(farm)}
-                  >
-                    <span className="pin-dot" />
-                    <span>{farm.name}</span>
-                  </button>
-                ))}
-              </div>
+              <GoogleMapSurface
+                farms={filtered.map((farm) => ({ ...farm, visited: farm.visited || farmHistory.get(farm.name)?.visited, favourite: farm.favourite || farmHistory.get(farm.name)?.favourite })) as MapFarm[]}
+                selectedFarm={selectedFarm}
+                onSelect={(farm) => setSelectedFarm(allFarms.find((candidate) => candidate.name === farm.name) ?? makePersonalFarm(farm.name, farm.town, "Google place", farm.location))}
+              />
               <div className="farm-preview">
                 <div>
                   <p className="eyebrow">

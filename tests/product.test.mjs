@@ -83,6 +83,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(farms, /places\.googleapis\.com\/v1\/places:searchText/);
   assert.match(farms, /X-Goog-FieldMask/);
   assert.match(farms, /fallbackFarms/);
+  assert.match(await read("components/google-map-surface.tsx"), /NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY/);
   assert.match(firestore, /request\.auth\.uid/);
   assert.match(firestore, /validRating/);
   assert.match(firestore, /validExperience/);

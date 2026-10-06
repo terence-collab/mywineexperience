@@ -81,6 +81,7 @@ button, input, textarea, select { font:inherit; }
 .search-field input::placeholder { color:#9a9188; }
 .filter-pill { border-color:#d9cdbd; color:var(--wine); }
 .map-art { background:linear-gradient(132deg,#d9d9ca 0%,#c8cbb9 55%,#adb69e 100%); }
+.google-map-surface { height:400px; width:100%; background:#d6ddc7; }
 .map-art:before { background:rgba(255,253,248,.55); }
 .map-art:after { background:rgba(158,169,140,.48); }
 .map-pin { color:#4d5149; }
@@ -118,4 +119,5 @@ button, input, textarea, select { font:inherit; }
   .map-card { border-left:0; border-right:0; }
   .farm-preview { padding-inline:20px; }
   .bottom-nav { height:68px; }
+  .google-map-surface { height:340px; }
 }

@@ -24,6 +24,7 @@ Production is currently running from the `wine-experience-b8864` Firebase projec
 - [x] Enable Places API (New).
 - [x] Use the existing restricted server-side Maps key for Wine Experience.
 - [x] Add Places API (New) to that key's API restrictions.
+- [ ] Add a browser-restricted `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY` for Maps JavaScript API.
 - [x] Confirm quota alerts and budget alerts. *(Owner confirmed configured.)*
 
 ## Gemini
