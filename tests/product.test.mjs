@@ -80,7 +80,8 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(await read("app/api/events/route.ts"), /wine_experience_event/);
   assert.match(await read("lib/telemetry.ts"), /allowedEvents/);
   assert.match(enrich, /x-enrichment-job-secret/);
-  assert.match(farms, /maps\.googleapis\.com\/maps\/api\/place\/textsearch\/json/);
+  assert.match(farms, /places\.googleapis\.com\/v1\/places:searchText/);
+  assert.match(farms, /X-Goog-FieldMask/);
   assert.match(farms, /fallbackFarms/);
   assert.match(firestore, /request\.auth\.uid/);
   assert.match(firestore, /validRating/);
