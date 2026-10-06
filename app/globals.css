@@ -880,3 +880,33 @@ body::before {
   .farm-preview { padding: 18px 18px 20px; }
   .farm-preview h2 { font-size: 28px; }
 }
+
+/* Compact list controls and readable mobile cards. */
+.search-control-row { display: flex; align-items: stretch; gap: 10px; margin-bottom: 14px; }
+.search-control-row .search-field { flex: 1; margin-bottom: 0; }
+.filter-toggle { min-width: 88px; border: 1px solid rgba(164, 184, 194, .55); border-radius: 12px; background: #fff; color: var(--wine); font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 4px 5px 12px rgba(77, 15, 43, .08); }
+.filter-toggle span { font-size: 18px; line-height: 1; }
+.journal-card { display: block; }
+.journal-card .card-photo { display: none; }
+.journal-card .card-copy { padding: 24px 24px 28px; }
+.wine-stars { color: #b98216; letter-spacing: .08em; white-space: nowrap; }
+.experience-wine { display: block; padding: 18px 0; }
+.experience-wine > strong { display: block; font: 26px Georgia, serif; font-weight: 400; margin-bottom: 7px; }
+.experience-wine > .name-input { width: 100%; margin-bottom: 8px; }
+.experience-wine > .reaction-chip { color: #b98216; background: transparent; font-size: 15px; letter-spacing: .08em; padding: 0; margin: 0 0 5px; }
+.experience-wine > .wine-category-line { margin: 0 0 10px; }
+.experience-wine > .text-button { display: inline-flex; margin: 5px 16px 0 0; }
+.experience-wine-main strong { display: block; font: 26px Georgia, serif; font-weight: 400; }
+.experience-wine-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 8px; }
+.experience-wine-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; }
+.experience-wine-actions .text-button { padding: 0; }
+.sheet-done-button { justify-content: center; margin-top: 18px; }
+.bottom-nav { z-index: 30; background-color: #f9fbf8 !important; background-image: none !important; opacity: 1; }
+.page-content-journal, .page-content-favourites, .page-content-profile { padding-bottom: 132px; }
+
+@media (max-width: 700px) {
+  .search-control-row { gap: 8px; }
+  .filter-toggle { min-width: 78px; }
+  .journal-card .card-copy { padding: 22px 18px 24px; }
+  .page-content-journal, .page-content-favourites, .page-content-profile { padding-bottom: 118px; }
+}

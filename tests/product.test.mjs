@@ -28,7 +28,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(accountAccess, /passwordless email link/);
   assert.match(landing, /completePasswordlessSignIn/);
   assert.match(landing, /completeGoogleRedirectSignIn/);
-  assert.match(page, /Add at-home reflection/);
+  assert.match(page, /Add reflection/);
   assert.match(page, /Add a note/);
   assert.match(page, /YOUR NOTE/);
   assert.match(page, /Export your journal/);

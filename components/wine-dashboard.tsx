@@ -667,6 +667,8 @@ export default function WineDashboard() {
   const [journalWineTypeFilter, setJournalWineTypeFilter] = useState("all");
   const [journalVarietyFilter, setJournalVarietyFilter] = useState("all");
   const [showNeedsReview, setShowNeedsReview] = useState(false);
+  const [journalFiltersOpen, setJournalFiltersOpen] = useState(false);
+  const [favouriteFiltersOpen, setFavouriteFiltersOpen] = useState(false);
   const [farmFilter, setFarmFilter] = useState<FarmFilter>("all");
   const [searchResults, setSearchResults] = useState<FarmSearchResult[]>([]);
   const [rating, setRating] = useState(0);
@@ -1416,11 +1418,16 @@ export default function WineDashboard() {
         )}
         {tab === "journal" && (
           <div className="list-view">
-            <div className="search-field journal-search">
-              <Icon name="search" />
-              <input value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Search farms or memories" />
+            <div className="search-control-row">
+              <div className="search-field journal-search">
+                <Icon name="search" />
+                <input value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Search farms or memories" />
+              </div>
+              <button className="filter-toggle" type="button" aria-expanded={journalFiltersOpen} onClick={() => setJournalFiltersOpen((value) => !value)}>
+                Filters <span aria-hidden="true">{journalFiltersOpen ? "−" : "+"}</span>
+              </button>
             </div>
-            <div className="filter-row" aria-label="Journal filters">
+            {journalFiltersOpen && <div className="filter-row" aria-label="Journal filters">
               <select value={journalFarmFilter} onChange={(event) => setJournalFarmFilter(event.target.value)} aria-label="Filter journal by farm">
                 <option value="all">All farms</option>
                 {[...new Set(experiences.map((item) => item.farmName))].sort().map((farmName) => <option key={farmName} value={farmName}>{farmName}</option>)}
@@ -1448,7 +1455,7 @@ export default function WineDashboard() {
                 {wineVarieties.map((variety) => <option key={variety} value={variety}>{variety}</option>)}
               </select>
               {needsReviewCount > 0 && <button className={`review-filter ${showNeedsReview ? "active" : ""}`} onClick={() => setShowNeedsReview((value) => !value)}>Needs review ({needsReviewCount})</button>}
-            </div>
+            </div>}
             {journalGroups.length ? (
               journalGroups.map(([month, items]) => <div key={month} className="journal-month-group">
                 <p className="month-label">{new Intl.DateTimeFormat("en-ZA", { month: "long", year: "numeric" }).format(new Date(`${month}-01T00:00:00`))}</p>
@@ -1458,14 +1465,13 @@ export default function WineDashboard() {
                   key={item.id}
                   onClick={() => setSelectedExperience(item)}
                 >
-                  <div className="card-photo photo-vines" />
                   <div className="card-copy">
                     <p className="eyebrow">
                       {item.farmName.toUpperCase()} - {item.town.toUpperCase()}
                     </p>
                     <h2>{item.note || "A day worth remembering"}</h2>
                     <p className="muted">
-                      {item.wineCount} wines - {"*".repeat(item.rating)}
+                      {item.wineCount} {item.wineCount === 1 ? "wine" : "wines"} <span className="wine-stars" aria-label={`${item.rating} out of 5 stars`}>{"★".repeat(item.rating)}</span>
                     </p>
                     {(item.wines ?? []).some((wine) => wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[...new Set((item.wines ?? []).map((wine) => [wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")).filter(Boolean))].join(" / ")}</p>}
                     <span className="text-button">
@@ -1489,11 +1495,16 @@ export default function WineDashboard() {
         )}
         {tab === "favourites" && (
           <div className="list-view">
-            <div className="search-field favourites-search">
-              <Icon name="search" />
-              <input value={favouriteSearch} onChange={(event) => setFavouriteSearch(event.target.value)} placeholder="Search your Loved it wines" />
+            <div className="search-control-row">
+              <div className="search-field favourites-search">
+                <Icon name="search" />
+                <input value={favouriteSearch} onChange={(event) => setFavouriteSearch(event.target.value)} placeholder="Search your Loved it wines" />
+              </div>
+              <button className="filter-toggle" type="button" aria-expanded={favouriteFiltersOpen} onClick={() => setFavouriteFiltersOpen((value) => !value)}>
+                Filters <span aria-hidden="true">{favouriteFiltersOpen ? "−" : "+"}</span>
+              </button>
             </div>
-            <div className="filter-row" aria-label="Buy again filters">
+            {favouriteFiltersOpen && <div className="filter-row" aria-label="Buy again filters">
               <select value={favouriteFarmFilter} onChange={(event) => setFavouriteFarmFilter(event.target.value)} aria-label="Filter favourites by farm">
                 <option value="all">All farms</option>
                 {[...new Set(experiences.map((item) => item.farmName))].sort().map((farmName) => <option key={farmName} value={farmName}>{farmName}</option>)}
@@ -1511,7 +1522,7 @@ export default function WineDashboard() {
                 <option value="30">Last 30 days</option>
                 <option value="365">Last year</option>
               </select>
-            </div>
+            </div>}
             {favouriteItems.map(({ wine, experience: experienceItem }) => (
                   <button className="wine-row wine-row-button" key={`${experienceItem.id}-${wine.id}`} onClick={() => { setSelectedWine(wine); setSelectedWineExperienceId(experienceItem.id); }} aria-label={`Open ${wine.name} from ${experienceItem.farmName}`}>
                   <div className={`wine-art ${wine.tone}`}>
@@ -1757,11 +1768,11 @@ export default function WineDashboard() {
           >
             <div className="sheet-handle" />
             <p className="eyebrow">
-              {selectedExperience.farmName.toUpperCase()}
+              {selectedExperience.experienceType === "at_home" ? "PERSONAL JOURNAL" : selectedExperience.farmName.toUpperCase()}
             </p>
             <h2 id="experience-detail-title">{selectedExperience.note || "A day worth remembering"}</h2>
-            <p className="muted">{new Date(selectedExperience.startedAt).toLocaleDateString("en-ZA")} · {"*".repeat(selectedExperience.rating)} · {selectedExperience.town}</p>
-            <a className="detail-map-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedExperience.farmName}, ${selectedExperience.town}`)}`} target="_blank" rel="noreferrer">Open farm in Maps <Icon name="arrow" /></a>
+            <p className="muted">{new Date(selectedExperience.startedAt).toLocaleDateString("en-ZA")} · <span className="wine-stars" aria-label={`${selectedExperience.rating} out of 5 stars`}>{"★".repeat(selectedExperience.rating)}</span> · {selectedExperience.town}</p>
+            {selectedExperience.experienceType !== "at_home" && <a className="detail-map-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedExperience.farmName}, ${selectedExperience.town}`)}`} target="_blank" rel="noreferrer">Open farm in Maps <Icon name="arrow" /></a>}
             {selectedExperiencePhotoUrl && <img className="experience-photo" src={selectedExperiencePhotoUrl} alt={`Photo from ${selectedExperience.farmName}`} />}
             {selectedExperience.wines?.map((wine) => (
               <div className="experience-wine" key={wine.id}>
@@ -1788,13 +1799,13 @@ export default function WineDashboard() {
                 ))}
                 {wine.note && <p className="personal-note">“{wine.note}”</p>}
                 <button className="text-button" onClick={() => { setReflectionWineId(wine.id); setReflectionReaction(undefined); }}>
-                  Add at-home reflection <Icon name="arrow" />
+                  Add reflection <Icon name="arrow" />
                 </button>
               </div>
             ))}
             {reflectionWineId && (
               <div className="reflection-form">
-                <p className="eyebrow">AT-HOME REFLECTION</p>
+                <p className="eyebrow">REFLECTION</p>
                 <textarea
                   className="farm-note"
                   value={reflectionText}
@@ -1874,10 +1885,10 @@ export default function WineDashboard() {
               {selectedWineAudioUrl && <audio className="audio-player" controls preload="metadata" src={selectedWineAudioUrl} />}
             </div>
             {selectedWine.reflections?.map((reflection) => (
-              <div className="reflection" key={reflection.id}><small>AT HOME{reflection.reaction ? ` · ${reflection.reaction}` : ""}</small><p>{reflection.note}</p></div>
+              <div className="reflection" key={reflection.id}><small>REFLECTION{reflection.reaction ? ` · ${reflection.reaction}` : ""}</small><p>{reflection.note}</p></div>
             ))}
-             <button className="primary-button" onClick={() => { setReflectionWineId(selectedWine.id); setReflectionReaction(undefined); setSelectedWine(undefined); }}>Add at-home reflection <Icon name="arrow" /></button>
-            <button className="text-button" onClick={() => setSelectedWine(undefined)}>Done</button>
+             <button className="primary-button" onClick={() => { setReflectionWineId(selectedWine.id); setReflectionReaction(undefined); setSelectedWine(undefined); }}>Add reflection <Icon name="arrow" /></button>
+            <button className="primary-button sheet-done-button" onClick={() => setSelectedWine(undefined)}>Done</button>
           </div>
         </div>
       )}
