@@ -1448,25 +1448,26 @@ export default function WineDashboard() {
         <span>Start experience</span>
       </button>
       <nav className="bottom-nav">
-        {(
-          [
-            ["map", "map", "Map"],
-            ["journal", "book", "Journal"],
-            ["favourites", "heart", "Favourites"],
-            ["profile", "user", "Profile"],
-          ] as [Tab, string, string][]
-        ).map(([key, icon, label]) => (
-          <button
-            key={key}
-            className={tab === key ? "selected" : ""}
-            aria-current={tab === key ? "page" : undefined}
-            onClick={() => setTab(key)}
-          >
-            <Icon name={icon} />
-            <span>{label}</span>
-          </button>
-        ))}
-        <div className="nav-spacer" />
+        <div className="bottom-nav-items">
+          {(
+            [
+              ["map", "map", "Map"],
+              ["journal", "book", "Journal"],
+              ["favourites", "heart", "Favourites"],
+              ["profile", "user", "Profile"],
+            ] as [Tab, string, string][]
+          ).map(([key, icon, label]) => (
+            <button
+              key={key}
+              className={tab === key ? "selected" : ""}
+              aria-current={tab === key ? "page" : undefined}
+              onClick={() => setTab(key)}
+            >
+              <Icon name={icon} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
       </nav>
       {startOpen && (
         <div className="modal-backdrop" onClick={() => setStartOpen(false)}>

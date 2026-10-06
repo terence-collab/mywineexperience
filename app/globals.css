@@ -750,3 +750,32 @@ body::before {
 .modal-backdrop .sheet .setup-datetime {
   background: #ffffff;
 }
+
+/* Keep the four navigation destinations centered as one balanced control group. */
+.bottom-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+}
+
+.bottom-nav-items {
+  width: min(100%, 760px);
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+}
+
+.bottom-nav button {
+  width: min(100%, 88px);
+  min-height: 56px;
+  justify-self: center;
+  justify-content: center;
+}
+
+.nav-spacer { display: none; }
+
+@media (max-width: 700px) {
+  .bottom-nav-items { width: 100%; }
+  .bottom-nav button { width: min(100%, 82px); }
+}
