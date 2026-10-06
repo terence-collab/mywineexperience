@@ -93,8 +93,8 @@ const farms: Farm[] = [
     note: "Beautiful valley setting",
     top: "24%",
     left: "57%",
-    visited: true,
-    favourite: true,
+    visited: false,
+    favourite: false,
     location: { latitude: -33.8496, longitude: 18.9869 },
   },
   {
@@ -103,7 +103,7 @@ const farms: Farm[] = [
     note: "Garden, farm and cellar",
     top: "38%",
     left: "41%",
-    visited: true,
+    visited: false,
     location: { latitude: -33.8084, longitude: 18.8456 },
   },
   {
@@ -707,6 +707,17 @@ export default function WineDashboard() {
         setWines(saved.wines?.length ? saved.wines : initialWines);
         setExperiences(saved.experiences ?? []);
         setKeepAudio(Boolean(saved.keepAudio));
+      } else {
+        setPersonalFarms([]);
+        setTab("map");
+        setSelectedFarm(farms[0]);
+        setExperience(false);
+        setActiveExperienceId("");
+        setExperienceStartedAt(undefined);
+        setExperienceLocation(undefined);
+        setWines(initialWines);
+        setExperiences([]);
+        setKeepAudio(false);
       }
     } catch {
       /* local storage unavailable */

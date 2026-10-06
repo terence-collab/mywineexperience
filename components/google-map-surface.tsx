@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 type Coordinate = { latitude: number; longitude: number };
 export type MapFarm = { name: string; town: string; top: string; left: string; location?: Coordinate; visited?: boolean; favourite?: boolean };
 type GoogleMap = { panTo: (position: { lat: number; lng: number }) => void; setZoom: (zoom: number) => void };
-type GoogleMarker = { setMap: (map: GoogleMap | null) => void; addListener: (event: string, callback: () => void) => void };
-type GoogleNamespace = { maps: { Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap; Marker: new (options: Record<string, unknown>) => GoogleMarker } };
+type GoogleMarker = { map: GoogleMap | null; addListener: (event: string, callback: () => void) => void };
+type GoogleNamespace = { maps: { importLibrary: (name: "maps" | "marker") => Promise<Record<string, unknown>> } };
 
 let mapsLoader: Promise<GoogleNamespace | null> | undefined;
 
@@ -15,6 +15,11 @@ function loadGoogleMaps(apiKey: string) {
   mapsLoader = new Promise((resolve) => {
     const existing = document.getElementById("google-maps-js") as HTMLScriptElement | null;
     if (existing) {
+      const currentGoogle = (window as unknown as { google?: GoogleNamespace }).google;
+      if (currentGoogle?.maps?.importLibrary) {
+        resolve(currentGoogle);
+        return;
+      }
       existing.addEventListener("load", () => resolve((window as unknown as { google?: GoogleNamespace }).google ?? null), { once: true });
       return;
     }
@@ -42,38 +47,47 @@ export function GoogleMapSurface({ farms, selectedFarm, onSelect }: { farms: Map
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY;
     if (!apiKey || !mapElement.current) { setMapState("fallback"); return; }
     let cancelled = false;
-    void loadGoogleMaps(apiKey).then((google) => {
+    void loadGoogleMaps(apiKey).then(async (google) => {
       if (cancelled || !google || !mapElement.current) { if (!cancelled) setMapState("fallback"); return; }
-      mapRef.current = new google.maps.Map(mapElement.current, {
-        center: { lat: -33.86, lng: 18.82 }, zoom: 10, disableDefaultUI: true, zoomControl: true, gestureHandling: "cooperative",
-        styles: [
-          { elementType: "geometry", stylers: [{ color: "#ebe8dd" }] },
-          { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#d6ddc7" }] },
-          { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9d5cf" }] },
-          { featureType: "road", elementType: "geometry", stylers: [{ color: "#f9f5eb" }] },
-          { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dfcfb8" }] },
-          { featureType: "poi", stylers: [{ visibility: "off" }] },
-          { elementType: "labels.text.fill", stylers: [{ color: "#713247" }] },
-          { elementType: "labels.text.stroke", stylers: [{ color: "#ebe8dd" }] },
-        ],
-      });
-      setMapState("ready");
-    });
+      try {
+        const mapsLibrary = await google.maps.importLibrary("maps");
+        const MapConstructor = mapsLibrary.Map as new (element: HTMLElement, options: Record<string, unknown>) => GoogleMap;
+        mapRef.current = new MapConstructor(mapElement.current, {
+          center: { lat: -33.86, lng: 18.82 }, zoom: 10, disableDefaultUI: true, zoomControl: true, gestureHandling: "cooperative",
+          styles: [
+            { elementType: "geometry", stylers: [{ color: "#ebe8dd" }] },
+            { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#d6ddc7" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9d5cf" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#f9f5eb" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dfcfb8" }] },
+            { featureType: "poi", stylers: [{ visibility: "off" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#713247" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#ebe8dd" }] },
+          ],
+        });
+        setMapState("ready");
+      } catch {
+        if (!cancelled) setMapState("fallback");
+      }
+    }).catch(() => { if (!cancelled) setMapState("fallback"); });
     return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     const google = (window as unknown as { google?: GoogleNamespace }).google;
     if (!mapRef.current || !google) return;
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = farms.filter((farm) => farm.location).map((farm) => {
-      const marker = new google.maps.Marker({
-        map: mapRef.current, position: { lat: farm.location!.latitude, lng: farm.location!.longitude }, title: farm.name,
-        label: { text: "●", color: farm.favourite ? "#713247" : "#8d9678", fontSize: "24px" },
+    void google.maps.importLibrary("marker").then((markerLibrary) => {
+      const MarkerConstructor = markerLibrary.AdvancedMarkerElement as new (options: Record<string, unknown>) => GoogleMarker;
+      markersRef.current.forEach((marker) => { marker.map = null; });
+      markersRef.current = farms.filter((farm) => farm.location).map((farm) => {
+        const marker = new MarkerConstructor({
+          map: mapRef.current, position: { lat: farm.location!.latitude, lng: farm.location!.longitude }, title: farm.name,
+          gmpClickable: true,
+        });
+        marker.addListener("click", () => onSelectRef.current(farm));
+        return marker;
       });
-      marker.addListener("click", () => onSelectRef.current(farm));
-      return marker;
-    });
+    }).catch(() => undefined);
   }, [farms, mapState]);
 
   useEffect(() => {
