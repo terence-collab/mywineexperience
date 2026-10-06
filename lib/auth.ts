@@ -35,6 +35,9 @@ export async function signInWithGoogle() {
   const configuredAuth = requireAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
+  if (typeof window !== "undefined" && window.location.hash) {
+    window.history.replaceState(null, "", window.location.pathname);
+  }
   await signInWithRedirect(configuredAuth, provider);
   return null;
 }

@@ -275,6 +275,43 @@ button, input, textarea, select { font:inherit; }
 .landing-cta span { color: var(--gold); font-size: 19px; }
 .landing-reassurance { color: #8b837a; font-size: 12px; margin: 20px 0 0; }
 
+.landing-art-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 490px;
+}
+
+.wine-bottle-art {
+  width: 132px;
+  flex: 0 0 132px;
+  color: rgba(182, 137, 35, .78);
+  transform: rotate(4deg);
+}
+
+.wine-bottle-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
+}
+
+.wine-bottle-art span {
+  display: block;
+  margin-top: -3px;
+  color: #9b711d;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-align: center;
+}
+
 .landing-card {
   padding: 10px;
   border-radius: 28px;
@@ -336,6 +373,8 @@ button, input, textarea, select { font:inherit; }
   .landing-hero { grid-template-columns: 1fr; gap: 43px; min-height: auto; padding: 58px 0 64px; }
   .landing-copy h1 { font-size: clamp(51px, 15vw, 71px); }
   .landing-lead { font-size: 15px; margin: 23px 0 26px; }
+  .landing-art-row { align-items: center; gap: 12px; }
+  .wine-bottle-art { width: 112px; flex-basis: 112px; }
   .landing-card .account-form { padding: 21px; }
   .landing-how { padding: 28px 0 72px; }
   .landing-how h2 { font-size: 45px; margin-bottom: 28px; }

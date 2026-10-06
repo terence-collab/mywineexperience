@@ -71,6 +71,9 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(accountAccess, /Continue with Google/);
   assert.match(landing, /Remember the bottles/);
   assert.match(landing, /My Wine Experience/);
+  assert.match(landing, /wine-bottle-art/);
+  assert.match(landing, /KEEP THE POUR/);
+  assert.match(landing, /completeGoogleRedirectSignIn/);
   assert.match(landing, /Taste/);
   assert.match(landing, /Capture/);
   assert.match(landing, /Remember/);
