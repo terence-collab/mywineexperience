@@ -408,3 +408,260 @@ body { background:var(--cream); color:var(--ink); }
   .bottom-nav { height:72px; }
   .start-button { bottom:76px; }
 }
+
+/* Arctic Translucency: clear frosted glass with polished Chardonnay accents. */
+:root {
+  --ink: #1d2830;
+  --muted: #74818a;
+  --cream: #edf3f5;
+  --paper: rgba(255, 255, 255, .64);
+  --line: rgba(164, 184, 194, .52);
+  --wine: #bc8922;
+  --gold: #e0b64f;
+  --sage: #9eb1ae;
+  --cellar-shadow: rgba(111, 126, 134, .18);
+  --glass-edge: rgba(255, 255, 255, .82);
+  --glass-shadow: 0 10px 28px rgba(105, 123, 133, .16), 0 1px 0 rgba(255, 255, 255, .86);
+}
+
+html { background: #eaf1f4; }
+
+body {
+  position: relative;
+  overflow-x: hidden;
+  background: #eaf1f4;
+  color: var(--ink);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  inset: -12%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, .98) 0 8%, transparent 28%),
+    radial-gradient(circle at 82% 14%, rgba(220, 237, 232, .95) 0 7%, transparent 29%),
+    radial-gradient(circle at 68% 88%, rgba(245, 224, 172, .52) 0 8%, transparent 25%),
+    linear-gradient(135deg, #eaf1f4 0%, #f8faf9 48%, #e2edf0 100%);
+  filter: blur(34px);
+  transform: scale(1.08);
+}
+
+.app-shell,
+.landing-shell,
+.auth-loading,
+.privacy-page {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+.topbar,
+.landing-header,
+.bottom-nav {
+  background: rgba(255, 255, 255, .46);
+  border-color: rgba(168, 187, 195, .48);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .9), 0 8px 24px rgba(111, 126, 134, .08);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+.topbar { height: 76px; }
+.brand-mark,
+.eyebrow { color: #a8781d; }
+.topbar-right { color: #6e7a82; }
+.avatar,
+.large-avatar {
+  background: rgba(255, 255, 255, .7);
+  color: #a8781d;
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 7px 16px rgba(111, 126, 134, .14), inset 0 1px 0 #fff;
+}
+
+.page-heading h1,
+.section-row h2,
+.list-view h1,
+.landing-copy h1,
+.landing-how h2 {
+  color: var(--ink);
+}
+
+.page-heading em,
+.section-row em,
+.list-view em,
+.sheet em,
+.landing-copy h1 em,
+.landing-how h2 em {
+  color: #bd8a23;
+}
+
+.muted,
+.intro-copy,
+.detail-copy,
+.landing-lead,
+.landing-reassurance,
+.landing-steps p { color: #6e7d85; }
+
+.map-card,
+.journal-card,
+.profile-card,
+.account-form,
+.active-experience-panel,
+.landing-card,
+.landing-steps article {
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .48);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+.map-card { overflow: hidden; }
+.map-toolbar { background: rgba(248, 252, 253, .5); }
+.search-field,
+.filter-pill,
+.filter-row select,
+.google-button,
+.landing-sign-in {
+  border: 1px solid rgba(255, 255, 255, .86);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .66);
+  color: var(--ink);
+  box-shadow: 0 7px 16px rgba(111, 126, 134, .13), inset 0 1px 0 #fff;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.search-field { height: 54px; }
+.search-field:focus-within {
+  border-color: rgba(224, 182, 79, .78);
+  box-shadow: 0 8px 18px rgba(111, 126, 134, .15), 0 0 0 3px rgba(224, 182, 79, .16), inset 0 1px 0 #fff;
+}
+
+.search-field input::placeholder { color: #8a979e; }
+.filter-pill { min-height: 54px; color: #9d711c; }
+.filter-pill:hover,
+.landing-sign-in:hover,
+.google-button:hover { border-color: rgba(224, 182, 79, .74); }
+.map-art,
+.google-map-surface { border-radius: 0; }
+.farm-preview { background: rgba(255, 255, 255, .62); }
+.farm-preview h2,
+.journal-row h3,
+.wine-info h3,
+.card-copy h2 { color: var(--ink); }
+
+.round-arrow,
+.primary-button,
+.landing-cta,
+.start-button {
+  background: linear-gradient(135deg, #d3a43d 0%, #efcb70 48%, #bd8720 100%);
+  color: #fff;
+  border-color: rgba(255, 255, 255, .78);
+  box-shadow: 0 8px 16px rgba(143, 108, 35, .28), inset 0 1px 0 rgba(255, 255, 255, .76), inset 0 -1px 0 rgba(129, 86, 8, .22);
+  text-shadow: 0 1px 1px rgba(102, 71, 14, .28);
+}
+
+.round-arrow { border-radius: 50%; }
+.start-button { border-width: 4px; border-radius: 18px; }
+.start-button svg { color: #fff8dc; }
+.bottom-nav { height: 78px; }
+.bottom-nav button { color: #7d8a91; }
+.bottom-nav button.selected {
+  color: #a8781d;
+  background: rgba(255, 255, 255, .68);
+  border: 1px solid rgba(255, 255, 255, .88);
+  box-shadow: 0 7px 16px rgba(111, 126, 134, .14), inset 0 1px 0 #fff;
+}
+
+.experience-bar {
+  color: var(--ink);
+  background: rgba(255, 255, 255, .65);
+  border: 1px solid rgba(255, 255, 255, .86);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.experience-bar .eyebrow { color: #a8781d; }
+.experience-bar button { background: linear-gradient(135deg, #d3a43d, #e9c76d); color: #fff; border-radius: 11px; }
+.sheet {
+  background: rgba(248, 252, 253, .78);
+  border: 1px solid rgba(255, 255, 255, .86);
+  box-shadow: 0 -18px 42px rgba(111, 126, 134, .18), inset 0 1px 0 #fff;
+  backdrop-filter: blur(28px) saturate(125%);
+  -webkit-backdrop-filter: blur(28px) saturate(125%);
+}
+
+.sheet-handle { background: #bdcbd0; }
+.selected-farm,
+.account-status,
+.account-form input,
+.name-input,
+.farm-note,
+.capture-action,
+.reflection,
+.reaction-grid button,
+.review-filter {
+  border: 1px solid rgba(255, 255, 255, .78);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .52);
+  box-shadow: 0 5px 12px rgba(111, 126, 134, .1), inset 0 1px 0 #fff;
+}
+
+.account-form { overflow: visible; }
+.account-form input:focus,
+.name-input:focus-within,
+.farm-note:focus { outline: 2px solid rgba(224, 182, 79, .46); outline-offset: 1px; }
+.google-button { color: var(--ink); }
+.google-mark { color: #c18d22; }
+.capture-action.recording { background: rgba(255, 237, 199, .68); border-color: rgba(224, 182, 79, .76); }
+.reaction-grid button.chosen,
+.review-filter.active { background: rgba(246, 216, 142, .5); color: #9a6c14; border-color: rgba(224, 182, 79, .72); }
+.selected-farm strong,
+.account-status strong { color: var(--ink); }
+.selected-farm p,
+.account-status p { color: #718089; }
+.action-icon,
+.farm-icon,
+.photo-queued { background: rgba(255, 255, 255, .7); color: #b17d18; border: 1px solid rgba(255, 255, 255, .86); }
+.wine-art { border-radius: 14px; box-shadow: 0 8px 16px rgba(111, 126, 134, .16), inset 0 1px 0 rgba(255, 255, 255, .5); }
+.wine-art.gold { background: linear-gradient(140deg, #b8831f, #f5d987); }
+.wine-art.purple { background: linear-gradient(140deg, #65747b, #c8d6d8); }
+.wine-art.green { background: linear-gradient(140deg, #718c84, #d4dfca); }
+.wine-art.rose { background: linear-gradient(140deg, #ba8f67, #f2dbb0); }
+.reaction-chip.loved { color: #996b14; background: rgba(246, 216, 142, .54); }
+.settings-list button,
+.settings-link,
+.data-tools button { border-bottom-color: rgba(164, 184, 194, .46); }
+.settings-list button:hover,
+.settings-link:hover,
+.text-button:hover { color: #ad7918; }
+.detail-photo,
+.experience-photo { border-radius: 18px; box-shadow: 0 8px 18px rgba(111, 126, 134, .12); }
+
+.landing-shell { background: transparent; }
+.landing-header { border-bottom-color: rgba(164, 184, 194, .46); }
+.landing-sign-in { color: #9f7119; }
+.landing-lead { color: #6e7d85; }
+.landing-reassurance { color: #74818a; }
+.landing-card {
+  padding: 10px;
+  background: rgba(255, 255, 255, .3);
+  box-shadow: 16px 22px 42px rgba(111, 126, 134, .15), inset 0 1px 0 rgba(255, 255, 255, .86);
+}
+.landing-card .account-form { background: rgba(255, 255, 255, .57); }
+.landing-steps article { background: rgba(255, 255, 255, .42); }
+.landing-steps h3 { color: #b17d18; }
+.landing-footer { border-top-color: rgba(164, 184, 194, .46); color: #74818a; }
+.landing-footer a { color: #a8781d; }
+
+@media (max-width: 700px) {
+  .topbar { height: 64px; }
+  .bottom-nav { height: 72px; }
+  .search-field { height: 50px; }
+  .filter-pill { min-height: 50px; }
+}
