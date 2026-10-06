@@ -26,9 +26,9 @@ type Reaction = "Loved it" | "Liked it" | "Not for me";
 type Tab = "map" | "journal" | "favourites" | "profile";
 type FarmFilter = "all" | "visited" | "favourites";
 type WineType = "red" | "white" | "sparkling" | "rosé" | "fortified" | "dessert" | "other";
-const WINE_TYPES: WineType[] = ["red", "white", "sparkling", "rosé", "fortified", "dessert", "other"];
+const WINE_TYPES: WineType[] = ["dessert", "fortified", "other", "red", "rosé", "sparkling", "white"];
 const WINE_TYPE_LABELS: Record<WineType, string> = { red: "Red", white: "White", sparkling: "Sparkling", "rosé": "Rosé", fortified: "Fortified", dessert: "Dessert", other: "Other" };
-const VARIETY_PRESETS = ["Sauvignon Blanc", "Chardonnay", "Cabernet Sauvignon", "Merlot", "Pinotage", "Pinot Noir", "Shiraz/Syrah", "Chenin Blanc", "Riesling"];
+const VARIETY_PRESETS = ["Cabernet Sauvignon", "Chardonnay", "Chenin Blanc", "Merlot", "Pinotage", "Pinot Noir", "Riesling", "Sauvignon Blanc", "Shiraz/Syrah"];
 type FarmSearchResult = { id: string; name: string; town: string; province: string; source: string; location?: { latitude: number; longitude: number } };
 type Wine = {
   id: number;
@@ -602,7 +602,7 @@ function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (valu
         </label>
         <button className="capture-action quick-add-photo" onClick={() => input.current?.click()}>
           <span className="action-icon">{preview ? <img className="photo-thumb" src={preview} alt="Bottle preview" /> : <Icon name="camera" />}</span>
-          <span><strong>{photo ? "Bottle photo ready" : "Photograph the bottle"}</strong><small>{photo ? photo.name : "Optional"}</small></span>
+          <span><strong>{photo ? "Bottle photo ready" : "Photograph the bottle"}</strong><small>{photo ? "We’ll suggest missing details after sync" : "Optional — can suggest name, type and variety"}</small></span>
           <span className="action-arrow">→</span>
         </button>
         <input ref={input} className="visually-hidden" type="file" accept="image/*" capture="environment" onChange={choosePhoto} />
@@ -1636,7 +1636,6 @@ export default function WineDashboard() {
         <div className="modal-backdrop" onClick={() => setStartChooserOpen(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
-            <p className="eyebrow">NEW ENTRY</p>
             <h2 id="start-sheet-title">What are you saving <em>today?</em></h2>
             <button className="primary-button chooser-button" onClick={() => { setStartChooserOpen(false); setQuickAddOpen(true); }}>Quick Add wine <Icon name="arrow" /></button>
             <button className="text-button chooser-secondary" onClick={() => { setStartChooserOpen(false); setFullTastingOpen(true); }}>Start full tasting <Icon name="arrow" /></button>

@@ -76,7 +76,7 @@ export async function uploadQueuedMedia(userId: string) {
         status: wine.captureMode === "quick_add" || wine.reaction ? "ready" : "draft",
         updatedAt: serverTimestamp(),
       }, { merge: true });
-      if (wine.captureMode !== "quick_add") await ensureEnrichmentJob(userId, item);
+      await ensureEnrichmentJob(userId, item);
     }
   }, (item) => item.userId === userId);
 }

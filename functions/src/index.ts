@@ -21,6 +21,8 @@ type Job = {
 
 type Wine = {
   name?: string;
+  varietal?: string;
+  wineType?: string;
   confirmedName?: string;
   suggestionStatus?: "suggested" | "confirmed" | "deferred";
   audioPath?: string;
@@ -33,6 +35,7 @@ type Extraction = {
   name?: string;
   producer?: string;
   varietal?: string;
+  wineType?: string;
   vintage?: string;
   region?: string;
   descriptors?: string[];
@@ -47,6 +50,13 @@ const extractionVersion = "wine-extraction-v1";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message.slice(0, 500) : "Enrichment failed.";
+}
+
+function normalizeWineType(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "red" || normalized === "white" || normalized === "sparkling" || normalized === "rosé" || normalized === "fortified" || normalized === "dessert" || normalized === "other") return normalized;
+  if (normalized === "rose" || normalized === "rosé wine") return "rosé";
+  return "";
 }
 
 function winePath(userId: string, experienceId: string, wineId: string) {
@@ -153,6 +163,8 @@ export const processEnrichmentJob = onDocumentCreated(
           extractionVersion: payload.extractionVersion ?? extractionVersion,
           processedAt: Timestamp.now(),
         },
+        varietal: wine.varietal || extraction.varietal || "",
+        wineType: wine.wineType || normalizeWineType(extraction.wineType),
         suggestionStatus: wine.suggestionStatus === "confirmed" ? "confirmed" : "suggested",
         updatedAt: Timestamp.now(),
       };

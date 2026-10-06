@@ -10,6 +10,7 @@ const wineSchema = {
     name: { type: "string", description: "Best-supported wine name, or empty string when unknown." },
     producer: { type: "string", description: "Producer or farm name, or empty string when unknown." },
     varietal: { type: "string", description: "Grape variety or wine type, or empty string when unknown." },
+    wineType: { type: "string", description: "Broad wine type: red, white, sparkling, rosé, fortified, dessert, other, or empty string when unknown." },
     vintage: { type: "string", description: "Vintage year, or empty string when unknown." },
     region: { type: "string", description: "Region or appellation only when stated in the evidence." },
     descriptors: { type: "array", items: { type: "string" }, description: "Tasting descriptors explicitly stated in the evidence." },
@@ -19,7 +20,7 @@ const wineSchema = {
     evidence: { type: "array", items: { type: "string" }, description: "Short source snippets supporting the extracted fields." },
     evidenceSources: { type: "array", items: { type: "string" }, description: "Evidence kinds used, such as ocr, transcript, or user_hint." },
   },
-  required: ["transcript", "name", "producer", "varietal", "vintage", "summary", "evidence"],
+  required: ["transcript", "name", "producer", "varietal", "wineType", "vintage", "summary", "evidence"],
 };
 
 type EnrichmentRequest = {
