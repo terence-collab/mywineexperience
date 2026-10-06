@@ -795,3 +795,57 @@ body::before {
   .page-content-map { padding-top: 20px; }
   .page-content-map .page-heading { margin-bottom: 18px; }
 }
+
+/* Compact app surfaces: navigation and tools should arrive immediately after the header. */
+.page-content {
+  padding-top: 26px;
+}
+
+.page-content-map .page-heading {
+  margin-bottom: 14px;
+}
+
+.page-content-journal,
+.page-content-favourites,
+.page-content-profile {
+  padding-top: 24px;
+}
+
+.page-content-journal .list-view,
+.page-content-favourites .list-view,
+.page-content-profile .list-view {
+  max-width: 920px;
+}
+
+.profile-view .export-journal {
+  display: none;
+}
+
+.bottom-nav-items {
+  width: min(100%, 900px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bottom-nav button.nav-action {
+  width: min(100%, 92px);
+  min-height: 58px;
+  color: #fff;
+  background: linear-gradient(135deg, #d3a43d 0%, #efcb70 48%, #bd8720 100%);
+  border: 3px solid rgba(255, 255, 255, .86);
+  border-radius: 18px;
+  box-shadow: 0 8px 18px rgba(143, 108, 35, .28), inset 0 1px 0 rgba(255, 255, 255, .76);
+  text-shadow: 0 1px 1px rgba(102, 71, 14, .28);
+}
+
+.bottom-nav button.nav-action svg { color: #fff8dc; }
+
+@media (max-width: 700px) {
+  .page-content,
+  .page-content-journal,
+  .page-content-favourites,
+  .page-content-profile { padding-top: 18px; }
+  .page-content-map .page-heading { margin-bottom: 10px; }
+  .bottom-nav-items { width: 100%; }
+  .bottom-nav button.nav-action { width: min(100%, 68px); min-height: 54px; border-radius: 16px; }
+  .bottom-nav button.nav-action span { font-size: 9px; }
+}

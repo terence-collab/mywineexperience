@@ -1154,11 +1154,6 @@ export default function WineDashboard() {
             <div className="page-heading">
               <div>
                 <p className="eyebrow">WESTERN CAPE - 05 OCTOBER 2026</p>
-                <h1>
-                  Find your next
-                  <br />
-                  <em>good day.</em>
-                </h1>
               </div>
             </div>
             <div className="map-card">
@@ -1228,31 +1223,10 @@ export default function WineDashboard() {
                 </button>
               </div>
             </div>
-            <div className="section-row">
-              <div>
-                <p className="eyebrow">YOUR WINE COUNTRY</p>
-                <h2>
-                  A little closer
-                  <br />
-                  <em>to somewhere.</em>
-                </h2>
-              </div>
-              <button className="text-button" onClick={() => setTab("journal")}>
-                View journal <Icon name="arrow" />
-              </button>
-            </div>
           </>
         )}
         {tab === "journal" && (
           <div className="list-view">
-            <div className="page-heading">
-              <div>
-                <p className="eyebrow">YOUR MEMORY</p>
-                <h1>
-                  The <em>journal.</em>
-                </h1>
-              </div>
-            </div>
             <div className="search-field journal-search">
               <Icon name="search" />
               <input value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Search farms or memories" />
@@ -1317,13 +1291,6 @@ export default function WineDashboard() {
         )}
         {tab === "favourites" && (
           <div className="list-view">
-            <p className="eyebrow">YOUR SHORTLIST</p>
-            <h1>
-              Buy <em>again.</em>
-            </h1>
-            <p className="intro-copy">
-              The bottles that made you pause, smile, or ask for another taste.
-            </p>
             <div className="search-field favourites-search">
               <Icon name="search" />
               <input value={favouriteSearch} onChange={(event) => setFavouriteSearch(event.target.value)} placeholder="Search your Loved it wines" />
@@ -1366,10 +1333,6 @@ export default function WineDashboard() {
         )}
         {tab === "profile" && (
           <div className="list-view profile-view">
-            <p className="eyebrow">A QUIET PLACE FOR YOUR DATA</p>
-            <h1>
-              Your <em>profile.</em>
-            </h1>
             <div className="account-status">
               <div>
                 <strong>{auth?.currentUser?.email ?? "Your private journal"}</strong>
@@ -1393,7 +1356,7 @@ export default function WineDashboard() {
                 </div>
                 <Icon name="arrow" />
               </a>
-              <button onClick={exportJournal}>
+              <button className="export-journal" onClick={exportJournal}>
                 <span>↓</span>
                 <div>
                   Export your journal<small>Download a private JSON copy</small>
@@ -1443,25 +1406,23 @@ export default function WineDashboard() {
           </button>
         </section>
       )}
-      <button className="start-button" aria-label="Start a new wine experience" onClick={() => setStartOpen(true)}>
-        <Icon name="plus" />
-        <span>Start experience</span>
-      </button>
       <nav className="bottom-nav">
         <div className="bottom-nav-items">
           {(
             [
               ["map", "map", "Map"],
               ["journal", "book", "Journal"],
+              ["start", "plus", "Start"],
               ["favourites", "heart", "Favourites"],
               ["profile", "user", "Profile"],
-            ] as [Tab, string, string][]
+            ] as [Tab | "start", string, string][]
           ).map(([key, icon, label]) => (
             <button
               key={key}
-              className={tab === key ? "selected" : ""}
-              aria-current={tab === key ? "page" : undefined}
-              onClick={() => setTab(key)}
+              className={key === "start" ? "nav-action" : tab === key ? "selected" : ""}
+              aria-current={key !== "start" && tab === key ? "page" : undefined}
+              aria-label={key === "start" ? "Start a new wine experience" : label}
+              onClick={() => key === "start" ? setStartOpen(true) : setTab(key)}
             >
               <Icon name={icon} />
               <span>{label}</span>
