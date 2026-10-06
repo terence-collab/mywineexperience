@@ -202,11 +202,11 @@ button, input, textarea, select { font:inherit; }
 }
 
 .landing-header {
-  min-height: 78px;
+  min-height: 64px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--line);
+  justify-content: flex-start;
+  border-bottom: 0;
 }
 
 .landing-sign-in,
@@ -645,6 +645,13 @@ body::before {
 
 .landing-shell { background: transparent; }
 .landing-header { border-bottom-color: rgba(164, 184, 194, .46); }
+.landing-header {
+  border-bottom: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 .landing-sign-in { color: #9f7119; }
 .landing-lead { color: #6e7d85; }
 .landing-reassurance { color: #74818a; }

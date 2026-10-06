@@ -27,7 +27,6 @@ export default function LandingPage() {
     <main className="landing-shell">
       <header className="landing-header">
         <div className="brand-mark" aria-label="My Wine Experience"><span>MY</span><span>WINE</span></div>
-        <a className="landing-sign-in" href="#account">Sign in</a>
       </header>
 
       <section className="landing-hero" aria-labelledby="landing-title">

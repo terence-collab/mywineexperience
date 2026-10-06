@@ -55,8 +55,15 @@ export default function AccountAccess({ onAuthenticated }: AccountAccessProps) {
     try {
       const result = await signInWithGoogle();
       if (result) onAuthenticated();
-    } catch {
-      setMessage("Google sign-in did not work. Please try again.");
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (code === "auth/unauthorized-domain") {
+        setMessage("This website is not yet authorised for Google sign-in.");
+      } else if (code === "auth/operation-not-supported-in-this-environment") {
+        setMessage("Google sign-in is not supported in this browser. Try the email option instead.");
+      } else {
+        setMessage("Google sign-in could not open. Please try again or use email sign-in.");
+      }
     }
   }
 
