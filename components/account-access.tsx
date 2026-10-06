@@ -59,6 +59,8 @@ export default function AccountAccess({ onAuthenticated }: AccountAccessProps) {
       const code = (error as { code?: string }).code;
       if (code === "auth/unauthorized-domain") {
         setMessage("This website is not yet authorised for Google sign-in.");
+      } else if (code === "auth/popup-closed-by-user") {
+        setMessage("The Google sign-in window was closed before sign-in finished.");
       } else if (code === "auth/operation-not-supported-in-this-environment") {
         setMessage("Google sign-in is not supported in this browser. Try the email option instead.");
       } else {

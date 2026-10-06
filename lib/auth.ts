@@ -5,6 +5,7 @@ import {
   isSignInWithEmailLink,
   onAuthStateChanged,
   sendSignInLinkToEmail,
+  signInWithPopup,
   signInWithRedirect,
   signInWithEmailLink,
   signInWithEmailAndPassword,
@@ -35,11 +36,19 @@ export async function signInWithGoogle() {
   const configuredAuth = requireAuth();
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  if (typeof window !== "undefined" && window.location.hash) {
-    window.history.replaceState(null, "", window.location.pathname);
+  try {
+    return await signInWithPopup(configuredAuth, provider);
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code !== "auth/popup-blocked" && code !== "auth/operation-not-supported-in-this-environment") {
+      throw error;
+    }
+    if (typeof window !== "undefined" && window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    await signInWithRedirect(configuredAuth, provider);
+    return null;
   }
-  await signInWithRedirect(configuredAuth, provider);
-  return null;
 }
 
 export async function completeGoogleRedirectSignIn() {
