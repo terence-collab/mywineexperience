@@ -1129,8 +1129,8 @@ export default function WineDashboard() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-mark">
-          <span>MY</span>
-          <span>WINE</span>
+          <span>My Wine</span>
+          <span>Experience</span>
         </div>
         <div className="topbar-right">
             <span className="sync-dot" /> <span>{mediaQueue.unassigned ? `${mediaQueue.unassigned} media ready to attach` : mediaQueue.failed ? `${mediaQueue.failed} media needs retry` : mediaQueue.waiting ? `${mediaQueue.waiting} media waiting to upload` : isOnline ? "Ready to sync" : "Offline - saved on this device"}</span>

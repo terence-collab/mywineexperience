@@ -70,6 +70,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.doesNotMatch(await read("lib/auth.ts"), /signInWithPopup/);
   assert.match(accountAccess, /Continue with Google/);
   assert.match(landing, /Remember the bottles/);
+  assert.match(landing, /My Wine Experience/);
   assert.match(landing, /Taste/);
   assert.match(landing, /Capture/);
   assert.match(landing, /Remember/);
