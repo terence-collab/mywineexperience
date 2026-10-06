@@ -51,12 +51,12 @@ export async function uploadQueuedMedia(userId: string) {
       ? `users/${userId}/experiences/${item.experienceId}/photos/${item.id}.${extension}`
       : `users/${userId}/experiences/${item.experienceId}/wines/${item.wineId}/${item.kind}/${item.id}.${extension}`;
     let wineRef: ReturnType<typeof doc> | undefined;
-    let wine: { reaction?: string; status?: string } | undefined;
+    let wine: { reaction?: string; status?: string; captureMode?: string } | undefined;
     if (db && item.wineId !== "experience") {
       wineRef = doc(db, "users", userId, "experiences", item.experienceId, "wines", item.wineId);
       const wineSnapshot = await getDoc(wineRef);
       if (!wineSnapshot.exists()) throw new Error("Wine draft metadata is not synced yet.");
-      wine = wineSnapshot.data() as { reaction?: string; status?: string };
+      wine = wineSnapshot.data() as { reaction?: string; status?: string; captureMode?: string };
     }
     await uploadBytes(ref(configuredStorage, path), item.blob, { contentType: item.blob.type || (item.kind === "audio" ? "audio/mp4" : "image/jpeg") });
     await getDownloadURL(ref(configuredStorage, path));
@@ -73,10 +73,10 @@ export async function uploadQueuedMedia(userId: string) {
         experienceId: item.experienceId,
         [`${item.kind}Path`]: path,
         ...(item.kind === "audio" ? { retainAudio: Boolean(item.retainAudio) } : {}),
-        status: wine.reaction ? "ready" : "draft",
+        status: wine.captureMode === "quick_add" || wine.reaction ? "ready" : "draft",
         updatedAt: serverTimestamp(),
       }, { merge: true });
-      await ensureEnrichmentJob(userId, item);
+      if (wine.captureMode !== "quick_add") await ensureEnrichmentJob(userId, item);
     }
   }, (item) => item.userId === userId);
 }

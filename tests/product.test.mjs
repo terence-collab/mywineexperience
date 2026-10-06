@@ -45,7 +45,10 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /audio-player/);
   assert.match(page, /detail-photo/);
   assert.match(page, /Filter favourites by farm/);
-  assert.match(page, /Filter favourites by varietal or type/);
+  assert.match(page, /Filter favourites by wine type/);
+  assert.match(page, /Filter favourites by variety/);
+  assert.match(page, /Quick Add wine/);
+  assert.match(page, /Start full tasting/);
   assert.match(page, /Filter favourites by date/);
   assert.match(page, /Filter journal by farm/);
   assert.match(page, /Filter journal by rating/);

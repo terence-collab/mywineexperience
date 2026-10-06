@@ -31,6 +31,7 @@ export type CloudExperience = {
   location?: { latitude: number; longitude: number };
   photoPath?: string;
   wines?: CloudWine[];
+  experienceType?: "farm_tasting" | "at_home";
 };
 
 export type CloudWine = {
@@ -39,6 +40,10 @@ export type CloudWine = {
   experienceId: string;
   name: string;
   note?: string;
+  rating?: number;
+  wineType?: "red" | "white" | "sparkling" | "rosé" | "fortified" | "dessert" | "other";
+  varietal?: string;
+  captureMode?: "tasting" | "quick_add";
   reaction?: "Loved it" | "Liked it" | "Not for me";
   status: "draft" | "waiting_upload" | "processing" | "ready" | "error";
   error?: string;

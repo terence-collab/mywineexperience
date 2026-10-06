@@ -839,6 +839,21 @@ body::before {
 
 .bottom-nav button.nav-action svg { color: #fff8dc; }
 
+.chooser-button { margin-top: 10px; }
+.chooser-secondary { width: 100%; justify-content: center; padding: 15px 0; margin-top: 8px; }
+.quick-add-sheet { max-height: 94vh; overflow-y: auto; }
+.quick-add-name { margin: 4px 0 10px; }
+.quick-add-field { display: block; margin: 10px 0; }
+.quick-add-field > span { display: block; color: #a8781d; font-size: 9px; font-weight: 700; letter-spacing: .15em; margin-bottom: 6px; }
+.quick-add-field small { color: #7b878d; font-size: 8px; letter-spacing: .08em; }
+.quick-add-field select { width: 100%; min-height: 46px; border: 1px solid rgba(164, 184, 194, .55); border-radius: 12px; background: rgba(255,255,255,.72); padding: 0 12px; color: var(--ink); font: inherit; }
+.quick-add-photo { width: 100%; border-radius: 14px; }
+.quick-add-rating { padding: 8px 0 14px; }
+.quick-add-rating .reaction-label { margin-bottom: 4px; }
+.quick-add-rating .star-row { justify-content: flex-start; }
+.wine-category-line { color: #a8781d; font-size: 10px; letter-spacing: .04em; margin: 6px 0 0; }
+.wine-row .wine-category-line { margin-top: 4px; }
+
 @media (max-width: 700px) {
   .page-content,
   .page-content-journal,

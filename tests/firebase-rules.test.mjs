@@ -58,6 +58,15 @@ test("drafts may omit a reaction, but ready wines may not", async () => {
   await assertFails(db.doc("users/user-a/experiences/experience-a/wines/invalid-a").set({ ...draft, status: "ready" }));
 });
 
+test("quick add wines use a valid rating and wine type without a reaction", async () => {
+  const db = testEnv.authenticatedContext("user-a").firestore();
+  const quickAdd = { ...wine, status: "ready", captureMode: "quick_add", rating: 4, wineType: "white" };
+  delete quickAdd.reaction;
+  await assertSucceeds(db.doc("users/user-a/experiences/experience-a/wines/quick-add-a").set(quickAdd));
+  await assertFails(db.doc("users/user-a/experiences/experience-a/wines/quick-add-invalid").set({ ...quickAdd, rating: 6 }));
+  await assertFails(db.doc("users/user-a/experiences/experience-a/wines/quick-add-invalid-type").set({ ...quickAdd, wineType: "orange" }));
+});
+
 test("clients cannot mutate processing jobs", async () => {
   const db = testEnv.authenticatedContext("user-a").firestore();
   const job = db.doc("users/user-a/processingJobs/job-a");

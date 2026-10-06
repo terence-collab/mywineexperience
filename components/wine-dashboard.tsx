@@ -25,12 +25,20 @@ import { GoogleMapSurface, type MapFarm } from "./google-map-surface";
 type Reaction = "Loved it" | "Liked it" | "Not for me";
 type Tab = "map" | "journal" | "favourites" | "profile";
 type FarmFilter = "all" | "visited" | "favourites";
+type WineType = "red" | "white" | "sparkling" | "rosé" | "fortified" | "dessert" | "other";
+const WINE_TYPES: WineType[] = ["red", "white", "sparkling", "rosé", "fortified", "dessert", "other"];
+const WINE_TYPE_LABELS: Record<WineType, string> = { red: "Red", white: "White", sparkling: "Sparkling", "rosé": "Rosé", fortified: "Fortified", dessert: "Dessert", other: "Other" };
+const VARIETY_PRESETS = ["Sauvignon Blanc", "Chardonnay", "Cabernet Sauvignon", "Merlot", "Pinotage", "Pinot Noir", "Shiraz/Syrah", "Chenin Blanc", "Riesling"];
 type FarmSearchResult = { id: string; name: string; town: string; province: string; source: string; location?: { latitude: number; longitude: number } };
 type Wine = {
   id: number;
   name: string;
   detail: string;
   note?: string;
+  rating?: number;
+  wineType?: WineType;
+  varietal?: string;
+  captureMode?: "tasting" | "quick_add";
   reaction?: Reaction;
   status: string;
   error?: string;
@@ -82,9 +90,18 @@ type ExperienceSummary = {
   photo?: boolean;
   photoPath?: string;
   wines?: Wine[];
+  experienceType?: "farm_tasting" | "at_home";
 };
 type Reflection = { id: string; note: string; createdAt: string; type: "at_home" | "general"; reaction?: Reaction };
 // Journal detail copy: Add an at-home reflection after the tasting.
+
+function wineVarietal(wine: Wine) {
+  return wine.varietal?.trim() || wine.suggestedIdentity?.varietal?.trim() || "";
+}
+
+function wineTypeLabel(type?: WineType) {
+  return type ? WINE_TYPE_LABELS[type] : "";
+}
 
 const farms: Farm[] = [
   {
@@ -177,6 +194,7 @@ async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSumm
       farmTown: experience.town,
       startedAt: Date.parse(experience.startedAt),
       status: "completed",
+      experienceType: experience.experienceType,
       wineCount: experience.wineCount,
       overallRating: experience.rating,
       note: experience.note,
@@ -192,6 +210,10 @@ async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSumm
           experienceId: experience.id,
           name: wine.name,
           note: wine.note,
+          rating: wine.rating,
+          wineType: wine.wineType,
+          varietal: wine.varietal,
+          captureMode: wine.captureMode,
           reaction: wine.reaction,
           status: toCloudStatus(wine.status),
           audioPath: wine.audioPath,
@@ -267,6 +289,8 @@ function CaptureSheet({
   const [reaction, setReaction] = useState<Reaction | undefined>(draft?.reaction);
   const [name, setName] = useState(draft?.name === "New wine" ? "" : draft?.name ?? "");
   const [note, setNote] = useState(draft?.note ?? "");
+  const [wineType, setWineType] = useState<WineType | undefined>(draft?.wineType);
+  const [varietal, setVarietal] = useState(draft?.varietal ?? "");
   const [noteOpen, setNoteOpen] = useState(Boolean(draft?.note));
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -357,6 +381,9 @@ function CaptureSheet({
       id: wineId,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
+      wineType,
+      varietal: varietal.trim() || undefined,
+      captureMode: "tasting",
        detail: `${audioCaptured ? "Voice note" : "Quick capture"}${photo || photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Waiting to upload",
@@ -374,6 +401,9 @@ function CaptureSheet({
       id: draft?.id ?? wines.length + 1,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
+      wineType,
+      varietal: varietal.trim() || undefined,
+      captureMode: "tasting",
       detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Draft",
@@ -388,6 +418,9 @@ function CaptureSheet({
       id: draft?.id ?? wines.length + 1,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
+      wineType,
+      varietal: varietal.trim() || undefined,
+      captureMode: "tasting",
       detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Draft",
@@ -395,7 +428,7 @@ function CaptureSheet({
       audio: audioCaptured,
       photo: photoCaptured,
     });
-  }, [audioCaptured, draft?.id, draft?.tone, name, note, onAutoSaveDraft, photoCaptured, reaction, wines.length]);
+  }, [audioCaptured, draft?.id, draft?.tone, name, note, onAutoSaveDraft, photoCaptured, reaction, varietal, wineType, wines.length]);
   return (
     <div className="modal-backdrop" onClick={saveDraft}>
       <div
@@ -485,6 +518,20 @@ function CaptureSheet({
               placeholder="Add or confirm a wine name"
             />
           </label>
+          <label className="quick-add-field">
+            <span>WINE TYPE <small>OPTIONAL</small></span>
+            <select value={wineType ?? ""} onChange={(event) => setWineType((event.target.value || undefined) as WineType | undefined)}>
+              <option value="">Choose a type</option>
+              {WINE_TYPES.map((type) => <option key={type} value={type}>{WINE_TYPE_LABELS[type]}</option>)}
+            </select>
+          </label>
+          <label className="quick-add-field">
+            <span>VARIETY <small>OPTIONAL</small></span>
+            <select value={varietal} onChange={(event) => setVarietal(event.target.value)}>
+              <option value="">Choose a variety</option>
+              {VARIETY_PRESETS.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
         </div>
         {captureMessage && <p className="form-message" role="status">{captureMessage}</p>}
         <p className="reaction-label">How did it feel?</p>
@@ -520,11 +567,80 @@ function CaptureSheet({
   );
 }
 
+function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (value: { name: string; wineType: WineType; varietal?: string; rating: number; photo?: File }) => void }) {
+  const [name, setName] = useState("");
+  const [wineType, setWineType] = useState<WineType>();
+  const [varietal, setVarietal] = useState("");
+  const [customVarietal, setCustomVarietal] = useState("");
+  const [rating, setRating] = useState(0);
+  const [photo, setPhoto] = useState<File>();
+  const [preview, setPreview] = useState<string>();
+  const input = useRef<HTMLInputElement>(null);
+  const selectedVarietal = varietal === "Other" ? customVarietal : varietal;
+
+  function choosePhoto(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPhoto(file);
+    setPreview(URL.createObjectURL(file));
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="sheet quick-add-sheet" role="dialog" aria-modal="true" aria-labelledby="quick-add-title" onClick={(event) => event.stopPropagation()}>
+        <div className="sheet-handle" />
+        <div className="capture-header">
+          <div>
+            <p className="eyebrow">QUICK ADD</p>
+            <h2 id="quick-add-title">A wine for <em>later.</em></h2>
+          </div>
+          <button className="close-button" aria-label="Close quick add" onClick={onClose}>×</button>
+        </div>
+        <label className="name-input quick-add-name">
+          <span>WINE NAME</span>
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. The Chocolate Block" autoFocus />
+        </label>
+        <button className="capture-action quick-add-photo" onClick={() => input.current?.click()}>
+          <span className="action-icon">{preview ? <img className="photo-thumb" src={preview} alt="Bottle preview" /> : <Icon name="camera" />}</span>
+          <span><strong>{photo ? "Bottle photo ready" : "Photograph the bottle"}</strong><small>{photo ? photo.name : "Optional"}</small></span>
+          <span className="action-arrow">→</span>
+        </button>
+        <input ref={input} className="visually-hidden" type="file" accept="image/*" capture="environment" onChange={choosePhoto} />
+        <label className="quick-add-field">
+          <span>WINE TYPE</span>
+          <select value={wineType ?? ""} onChange={(event) => setWineType((event.target.value || undefined) as WineType | undefined)}>
+            <option value="">Choose a type</option>
+            {WINE_TYPES.map((type) => <option key={type} value={type}>{WINE_TYPE_LABELS[type]}</option>)}
+          </select>
+        </label>
+        <label className="quick-add-field">
+          <span>VARIETY <small>OPTIONAL</small></span>
+          <select value={varietal} onChange={(event) => setVarietal(event.target.value)}>
+            <option value="">Choose a variety</option>
+            {VARIETY_PRESETS.map((item) => <option key={item} value={item}>{item}</option>)}
+            <option value="Other">Other / custom</option>
+          </select>
+        </label>
+        {varietal === "Other" && <label className="name-input"><span>CUSTOM VARIETY</span><input value={customVarietal} onChange={(event) => setCustomVarietal(event.target.value)} placeholder="Enter a grape variety" /></label>}
+        <div className="quick-add-rating">
+          <p className="reaction-label">Your rating</p>
+          <div className="star-row" aria-label="Rate wine out of 5 stars">
+            {[1, 2, 3, 4, 5].map((value) => <button key={value} className={rating >= value ? "star active" : "star"} aria-label={`${value} out of 5 stars`} onClick={() => setRating(value)}>★</button>)}
+          </div>
+        </div>
+        <button className="primary-button" disabled={!name.trim() || !wineType || !rating || (varietal === "Other" && !customVarietal.trim())} onClick={() => wineType && onSave({ name: name.trim(), wineType, varietal: selectedVarietal || undefined, rating, photo })}>Save wine <Icon name="arrow" /></button>
+      </div>
+    </div>
+  );
+}
+
 export default function WineDashboard() {
   const [tab, setTab] = useState<Tab>("map");
   const [selectedFarm, setSelectedFarm] = useState(farms[0]);
   const [personalFarms, setPersonalFarms] = useState<Farm[]>([]);
-  const [startOpen, setStartOpen] = useState(false);
+  const [startChooserOpen, setStartChooserOpen] = useState(false);
+  const [fullTastingOpen, setFullTastingOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [startDateTime, setStartDateTime] = useState(() => new Date().toISOString().slice(0, 16));
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureDraft, setCaptureDraft] = useState<Wine>();
@@ -539,7 +655,8 @@ export default function WineDashboard() {
   const [search, setSearch] = useState("");
   const [favouriteSearch, setFavouriteSearch] = useState("");
   const [favouriteFarmFilter, setFavouriteFarmFilter] = useState("all");
-  const [favouriteTypeFilter, setFavouriteTypeFilter] = useState("all");
+  const [favouriteWineTypeFilter, setFavouriteWineTypeFilter] = useState("all");
+  const [favouriteVarietyFilter, setFavouriteVarietyFilter] = useState("all");
   const [favouriteDateFilter, setFavouriteDateFilter] = useState("all");
   const [filterReferenceTime] = useState(() => Date.now());
   const [journalSearch, setJournalSearch] = useState("");
@@ -547,6 +664,8 @@ export default function WineDashboard() {
   const [journalRatingFilter, setJournalRatingFilter] = useState("all");
   const [journalMonthFilter, setJournalMonthFilter] = useState("all");
   const [journalReactionFilter, setJournalReactionFilter] = useState("all");
+  const [journalWineTypeFilter, setJournalWineTypeFilter] = useState("all");
+  const [journalVarietyFilter, setJournalVarietyFilter] = useState("all");
   const [showNeedsReview, setShowNeedsReview] = useState(false);
   const [farmFilter, setFarmFilter] = useState<FarmFilter>("all");
   const [searchResults, setSearchResults] = useState<FarmSearchResult[]>([]);
@@ -604,28 +723,33 @@ export default function WineDashboard() {
       }),
     [allFarms, farmFilter, farmHistory, search],
   );
-  const favouriteTypes = useMemo(() => [...new Set(experiences.flatMap((item) => (item.wines ?? []).map((wine) => wine.suggestedIdentity?.varietal).filter(Boolean) as string[]))].sort(), [experiences]);
+  const wineTypes = useMemo(() => [...new Set(experiences.flatMap((item) => (item.wines ?? []).map((wine) => wine.wineType).filter(Boolean) as WineType[]))].sort(), [experiences]);
+  const wineVarieties = useMemo(() => [...new Set(experiences.flatMap((item) => (item.wines ?? []).map(wineVarietal).filter(Boolean)))].sort(), [experiences]);
   const favouriteItems = useMemo(() => {
     const cutoff = favouriteDateFilter === "30" ? filterReferenceTime - 30 * 24 * 60 * 60 * 1000 : favouriteDateFilter === "365" ? filterReferenceTime - 365 * 24 * 60 * 60 * 1000 : 0;
     return experiences.flatMap((experienceItem) => (experienceItem.wines ?? []).map((wine) => ({ wine, experience: experienceItem }))).filter(({ wine, experience: experienceItem }) => {
-      const varietal = wine.suggestedIdentity?.varietal ?? "";
+      const varietal = wineVarietal(wine);
       const matchesSearch = [
         wine.name,
         wine.note,
         wine.detail,
         wine.transcript,
         wine.summary,
+        wine.wineType,
+        wine.varietal,
         wine.suggestedIdentity?.producer,
         wine.suggestedIdentity?.varietal,
         wine.suggestedIdentity?.vintage,
         experienceItem.farmName,
       ].filter(Boolean).join(" ").toLowerCase().includes(favouriteSearch.toLowerCase());
       const matchesFarm = favouriteFarmFilter === "all" || experienceItem.farmName === favouriteFarmFilter;
-      const matchesType = favouriteTypeFilter === "all" || varietal === favouriteTypeFilter;
+      const matchesWineType = favouriteWineTypeFilter === "all" || wine.wineType === favouriteWineTypeFilter;
+      const matchesVariety = favouriteVarietyFilter === "all" || varietal === favouriteVarietyFilter;
       const matchesDate = !cutoff || Date.parse(experienceItem.startedAt) >= cutoff;
-      return wine.reaction === "Loved it" && matchesSearch && matchesFarm && matchesType && matchesDate;
+      const isFavourite = wine.reaction === "Loved it" || (!wine.reaction && (wine.rating ?? 0) >= 4);
+      return isFavourite && matchesSearch && matchesFarm && matchesWineType && matchesVariety && matchesDate;
     });
-  }, [experiences, favouriteDateFilter, favouriteFarmFilter, favouriteSearch, favouriteTypeFilter, filterReferenceTime]);
+  }, [experiences, favouriteDateFilter, favouriteFarmFilter, favouriteSearch, favouriteVarietyFilter, favouriteWineTypeFilter, filterReferenceTime]);
   const journalMonthOptions = useMemo(() => [...new Set(experiences.map((item) => item.startedAt.slice(0, 7)))].sort().reverse(), [experiences]);
   const needsReviewCount = useMemo(() => experiences.reduce((total, item) => total + (item.wines ?? []).filter((wine) => wine.suggestedIdentity && wine.suggestionStatus !== "confirmed").length, 0), [experiences]);
   const visibleExperiences = useMemo(() => experiences.filter((item) => {
@@ -639,15 +763,19 @@ export default function WineDashboard() {
       wine.suggestedIdentity?.producer,
       wine.suggestedIdentity?.varietal,
       wine.suggestedIdentity?.vintage,
+      wine.wineType,
+      wine.varietal,
     ]).filter(Boolean).join(" ");
     const matchesSearch = `${item.farmName} ${item.town} ${item.note ?? ""} ${wineSearchText}`.toLowerCase().includes(journalSearch.toLowerCase());
     const matchesFarm = journalFarmFilter === "all" || item.farmName === journalFarmFilter;
     const matchesRating = journalRatingFilter === "all" || item.rating === Number(journalRatingFilter);
     const matchesMonth = journalMonthFilter === "all" || month === journalMonthFilter;
     const matchesReaction = journalReactionFilter === "all" || (item.wines ?? []).some((wine) => wine.reaction === journalReactionFilter);
+    const matchesWineType = journalWineTypeFilter === "all" || (item.wines ?? []).some((wine) => wine.wineType === journalWineTypeFilter);
+    const matchesVariety = journalVarietyFilter === "all" || (item.wines ?? []).some((wine) => wineVarietal(wine) === journalVarietyFilter);
     const matchesReview = !showNeedsReview || (item.wines ?? []).some((wine) => wine.suggestedIdentity && wine.suggestionStatus !== "confirmed");
-    return matchesSearch && matchesFarm && matchesRating && matchesMonth && matchesReaction && matchesReview;
-  }), [experiences, journalFarmFilter, journalMonthFilter, journalRatingFilter, journalReactionFilter, journalSearch, showNeedsReview]);
+    return matchesSearch && matchesFarm && matchesRating && matchesMonth && matchesReaction && matchesWineType && matchesVariety && matchesReview;
+  }), [experiences, journalFarmFilter, journalMonthFilter, journalRatingFilter, journalReactionFilter, journalSearch, journalVarietyFilter, journalWineTypeFilter, showNeedsReview]);
   const journalGroups = useMemo(() => {
     const groups = new Map<string, ExperienceSummary[]>();
     for (const item of visibleExperiences) {
@@ -769,6 +897,7 @@ export default function WineDashboard() {
                 startedAt: new Date(item.startedAt).toISOString(),
                 rating: item.overallRating ?? 0,
                 wineCount: item.wineCount,
+                experienceType: item.experienceType,
                 note: item.note,
                 photo: Boolean(item.photoPath),
                 photoPath: item.photoPath,
@@ -777,6 +906,10 @@ export default function WineDashboard() {
                   name: wine.name,
                   confirmedName: wine.confirmedName,
                   note: wine.note,
+                  rating: wine.rating,
+                  wineType: wine.wineType,
+                  varietal: wine.varietal,
+                  captureMode: wine.captureMode,
                   detail: wine.status,
                   reaction: wine.reaction,
                   status: wine.status,
@@ -871,7 +1004,7 @@ export default function WineDashboard() {
   function begin() {
     const experienceId = crypto.randomUUID();
     const startedAt = startDateTime ? new Date(startDateTime).toISOString() : new Date().toISOString();
-    setStartOpen(false);
+    setFullTastingOpen(false);
     setActiveExperienceId(experienceId);
     setExperienceStartedAt(startedAt);
     setExperienceLocation(undefined);
@@ -918,6 +1051,49 @@ export default function WineDashboard() {
     setCaptureOpen(false);
     trackEvent("wine_saved", { kind: wine.audio || wine.photo ? "media" : "manual", online: navigator.onLine });
   }
+
+  function saveQuickAdd(value: { name: string; wineType: WineType; varietal?: string; rating: number; photo?: File }) {
+    const experienceId = crypto.randomUUID();
+    const wineId = 1;
+    const startedAt = new Date().toISOString();
+    const wine: Wine = {
+      id: wineId,
+      name: value.name,
+      detail: "Quick add at home",
+      rating: value.rating,
+      wineType: value.wineType,
+      varietal: value.varietal,
+      captureMode: "quick_add",
+      status: "ready",
+      tone: value.wineType === "red" ? "purple" : value.wineType === "rosé" ? "rose" : value.wineType === "white" ? "gold" : "green",
+      photo: Boolean(value.photo),
+    };
+    const summary: ExperienceSummary = {
+      id: experienceId,
+      farmName: "At home",
+      town: "Personal journal",
+      startedAt,
+      rating: value.rating,
+      wineCount: 1,
+      experienceType: "at_home",
+      wines: [wine],
+    };
+    if (value.photo) {
+      void enqueueMedia({ id: crypto.randomUUID(), userId: auth?.currentUser?.uid, experienceId, wineId: String(wineId), kind: "photo", blob: value.photo });
+    }
+    experienceSummariesRef.current.set(experienceId, summary);
+    setExperiences((current) => [summary, ...current]);
+    setQuickAddOpen(false);
+    setTab("journal");
+    trackEvent("wine_saved", { kind: "quick_add", online: navigator.onLine });
+    const uid = auth?.currentUser?.uid;
+    if (uid && firebaseEnabled) {
+      void Promise.all([
+        saveCloudExperience({ id: experienceId, userId: uid, farmId: "at-home", farmName: "At home", farmTown: "Personal journal", startedAt: Date.parse(startedAt), status: "completed", wineCount: 1, overallRating: value.rating, experienceType: "at_home" }),
+        saveCloudWine({ id: String(wineId), userId: uid, experienceId, name: wine.name, rating: wine.rating, wineType: wine.wineType, varietal: wine.varietal, captureMode: "quick_add", status: "ready", createdAt: Date.now() }),
+      ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
+    }
+  }
   const updateWineDraft = useCallback((wine: Wine) => {
     setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
   }, []);
@@ -935,6 +1111,7 @@ export default function WineDashboard() {
        startedAt: experienceStartedAt ?? new Date().toISOString(),
       rating,
       wineCount: wines.length,
+      experienceType: "farm_tasting" as const,
       note: note || undefined,
       location: experienceLocation,
       wines: [...wines],
@@ -973,6 +1150,10 @@ export default function WineDashboard() {
               note: wine.note,
               reaction: wine.reaction,
               status: toCloudStatus(wine.status),
+              rating: wine.rating,
+              wineType: wine.wineType,
+              varietal: wine.varietal,
+              captureMode: wine.captureMode,
               createdAt: Date.now(),
         })),
       ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
@@ -1034,6 +1215,10 @@ export default function WineDashboard() {
         name,
         confirmedName: name,
         reaction: updatedWine.reaction,
+        rating: updatedWine.rating,
+        wineType: updatedWine.wineType,
+        varietal: updatedWine.varietal,
+        captureMode: updatedWine.captureMode,
         status: toCloudStatus(updatedWine.status),
         suggestedIdentity: updatedWine.suggestedIdentity,
         suggestionStatus: "confirmed",
@@ -1064,6 +1249,10 @@ export default function WineDashboard() {
         name: updatedWine.name,
         confirmedName: updatedWine.confirmedName,
         reaction: updatedWine.reaction,
+        rating: updatedWine.rating,
+        wineType: updatedWine.wineType,
+        varietal: updatedWine.varietal,
+        captureMode: updatedWine.captureMode,
         status: toCloudStatus(updatedWine.status),
         suggestedIdentity: updatedWine.suggestedIdentity,
         suggestionStatus: status,
@@ -1217,7 +1406,7 @@ export default function WineDashboard() {
                 <button
                   className="round-arrow"
                   aria-label={`Start an experience at ${selectedFarm.name}`}
-                  onClick={() => setStartOpen(true)}
+                  onClick={() => setFullTastingOpen(true)}
                 >
                   <Icon name="arrow" />
                 </button>
@@ -1250,6 +1439,14 @@ export default function WineDashboard() {
                 <option value="Liked it">Liked it</option>
                 <option value="Not for me">Not for me</option>
               </select>
+              <select value={journalWineTypeFilter} onChange={(event) => setJournalWineTypeFilter(event.target.value)} aria-label="Filter journal by wine type">
+                <option value="all">All wine types</option>
+                {wineTypes.map((type) => <option key={type} value={type}>{WINE_TYPE_LABELS[type]}</option>)}
+              </select>
+              <select value={journalVarietyFilter} onChange={(event) => setJournalVarietyFilter(event.target.value)} aria-label="Filter journal by variety">
+                <option value="all">All varieties</option>
+                {wineVarieties.map((variety) => <option key={variety} value={variety}>{variety}</option>)}
+              </select>
               {needsReviewCount > 0 && <button className={`review-filter ${showNeedsReview ? "active" : ""}`} onClick={() => setShowNeedsReview((value) => !value)}>Needs review ({needsReviewCount})</button>}
             </div>
             {journalGroups.length ? (
@@ -1270,6 +1467,7 @@ export default function WineDashboard() {
                     <p className="muted">
                       {item.wineCount} wines - {"*".repeat(item.rating)}
                     </p>
+                    {(item.wines ?? []).some((wine) => wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[...new Set((item.wines ?? []).map((wine) => [wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")).filter(Boolean))].join(" / ")}</p>}
                     <span className="text-button">
                       Open experience <Icon name="arrow" />
                     </span>
@@ -1284,7 +1482,7 @@ export default function WineDashboard() {
                 <p className="eyebrow">YOUR FIRST MEMORY</p>
                 <h2>Start with a place you have loved.</h2>
                 <p className="muted">Your experiences, wines, reactions, and reflections will appear here in date order.</p>
-                <button className="primary-button" onClick={() => setStartOpen(true)}>Start experience <Icon name="arrow" /></button>
+                <button className="primary-button" onClick={() => setFullTastingOpen(true)}>Start experience <Icon name="arrow" /></button>
               </div>
             )}
           </div>
@@ -1300,9 +1498,13 @@ export default function WineDashboard() {
                 <option value="all">All farms</option>
                 {[...new Set(experiences.map((item) => item.farmName))].sort().map((farmName) => <option key={farmName} value={farmName}>{farmName}</option>)}
               </select>
-              <select value={favouriteTypeFilter} onChange={(event) => setFavouriteTypeFilter(event.target.value)} aria-label="Filter favourites by varietal or type">
-                <option value="all">All types</option>
-                {favouriteTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+              <select value={favouriteWineTypeFilter} onChange={(event) => setFavouriteWineTypeFilter(event.target.value)} aria-label="Filter favourites by wine type">
+                <option value="all">All wine types</option>
+                {wineTypes.map((type) => <option key={type} value={type}>{WINE_TYPE_LABELS[type]}</option>)}
+              </select>
+              <select value={favouriteVarietyFilter} onChange={(event) => setFavouriteVarietyFilter(event.target.value)} aria-label="Filter favourites by variety">
+                <option value="all">All varieties</option>
+                {wineVarieties.map((variety) => <option key={variety} value={variety}>{variety}</option>)}
               </select>
               <select value={favouriteDateFilter} onChange={(event) => setFavouriteDateFilter(event.target.value)} aria-label="Filter favourites by date">
                 <option value="all">Any date</option>
@@ -1318,7 +1520,7 @@ export default function WineDashboard() {
                   <div className="wine-info">
                     <p className="eyebrow">{wine.status}</p>
                     <h3>{wine.name}</h3>
-                    <p className="muted">{experienceItem.farmName} · {wine.suggestedIdentity?.varietal ?? wine.detail}</p>
+                    <p className="muted">{experienceItem.farmName} · {[wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ") || wine.detail}</p>
                     <span className="reaction-chip loved">Loved it</span>
                   </div>
                 </button>
@@ -1422,7 +1624,7 @@ export default function WineDashboard() {
               className={key === "start" ? "nav-action" : tab === key ? "selected" : ""}
               aria-current={key !== "start" && tab === key ? "page" : undefined}
               aria-label={key === "start" ? "Start a new wine experience" : label}
-              onClick={() => key === "start" ? setStartOpen(true) : setTab(key)}
+              onClick={() => key === "start" ? setStartChooserOpen(true) : setTab(key)}
             >
               <Icon name={icon} />
               <span>{label}</span>
@@ -1430,23 +1632,30 @@ export default function WineDashboard() {
           ))}
         </div>
       </nav>
-      {startOpen && (
-        <div className="modal-backdrop" onClick={() => setStartOpen(false)}>
+      {startChooserOpen && (
+        <div className="modal-backdrop" onClick={() => setStartChooserOpen(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
+            <div className="sheet-handle" />
+            <p className="eyebrow">NEW ENTRY</p>
+            <h2 id="start-sheet-title">What are you saving <em>today?</em></h2>
+            <button className="primary-button chooser-button" onClick={() => { setStartChooserOpen(false); setQuickAddOpen(true); }}>Quick Add wine <Icon name="arrow" /></button>
+            <button className="text-button chooser-secondary" onClick={() => { setStartChooserOpen(false); setFullTastingOpen(true); }}>Start full tasting <Icon name="arrow" /></button>
+          </div>
+        </div>
+      )}
+      {fullTastingOpen && (
+        <div className="modal-backdrop" onClick={() => setFullTastingOpen(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
             <p className="eyebrow">NEW EXPERIENCE</p>
-            <h2 id="start-sheet-title">
-              Where are you tasting
-              <br />
-              <em>today?</em>
-            </h2>
+            <h2 id="start-sheet-title">Where are you tasting <em>today?</em></h2>
             <div className="selected-farm">
               <div className="farm-icon">F</div>
               <div>
                 <strong>{selectedFarm.name}</strong>
                 <p>{selectedFarm.town}, Western Cape</p>
               </div>
-              <button onClick={() => setStartOpen(false)}>Change farm</button>
+              <button onClick={() => setFullTastingOpen(false)}>Change farm</button>
             </div>
             <label className="name-input setup-datetime">
               <span>DATE &amp; TIME</span>
@@ -1463,6 +1672,7 @@ export default function WineDashboard() {
           </div>
         </div>
       )}
+      {quickAddOpen && <QuickAddSheet onClose={() => setQuickAddOpen(false)} onSave={saveQuickAdd} />}
       {captureOpen && (
         <CaptureSheet
           wines={wines}
@@ -1564,7 +1774,8 @@ export default function WineDashboard() {
                     aria-label="Correct wine name"
                   />
                 ) : <strong>{wine.name}</strong>}
-                <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{wine.reaction}</span>
+                {wine.rating ? <span className="reaction-chip loved">{"★".repeat(wine.rating)}</span> : <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{wine.reaction}</span>}
+                {(wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")}</p>}
                 <button className="text-button" onClick={() => { setSelectedWine(wine); setSelectedWineExperienceId(selectedExperience.id); }}>Open wine</button>
                 {editingWineId === wine.id ? (
                   <button className="text-button" onClick={saveWineName}>Save name</button>
@@ -1625,7 +1836,8 @@ export default function WineDashboard() {
             <div className="sheet-handle" />
             <p className="eyebrow">WINE DETAIL</p>
             <h2 id="wine-detail-title">{selectedWine.name}</h2>
-            <span className="reaction-chip loved">{selectedWine.reaction}</span>
+            {selectedWine.rating ? <span className="reaction-chip loved">{"★".repeat(selectedWine.rating)} / 5</span> : selectedWine.reaction ? <span className="reaction-chip loved">{selectedWine.reaction}</span> : null}
+            {(selectedWine.wineType || wineVarietal(selectedWine)) && <p className="wine-category-line">{[wineTypeLabel(selectedWine.wineType), wineVarietal(selectedWine)].filter(Boolean).join(" · ")}</p>}
             <p className="detail-copy">{selectedWine.detail}</p>
             {selectedWine.note && <div className="detail-section"><p className="eyebrow">YOUR NOTE</p><p className="detail-copy">{selectedWine.note}</p></div>}
             {selectedWine.summary && <div className="detail-section"><p className="eyebrow">HOST SUMMARY</p><p className="detail-copy">{selectedWine.summary}</p></div>}

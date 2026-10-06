@@ -6,6 +6,7 @@ service cloud.firestore {
     function owns(data) { return signedIn() && data.userId == request.auth.uid; }
     function validReaction(value) { return value == 'Loved it' || value == 'Liked it' || value == 'Not for me'; }
     function validRating(value) { return value is int && value >= 1 && value <= 5; }
+    function validWineType(value) { return value == 'red' || value == 'white' || value == 'sparkling' || value == 'rosé' || value == 'fortified' || value == 'dessert' || value == 'other'; }
     function validExperience(data) {
       return data.userId is string
         && data.farmId is string
@@ -14,6 +15,7 @@ service cloud.firestore {
         && data.wineCount >= 0
         && data.wineCount <= 7
         && (data.status == 'active' || data.status == 'completed')
+        && (!('experienceType' in data) || data.experienceType == 'farm_tasting' || data.experienceType == 'at_home')
         && (!('overallRating' in data) || validRating(data.overallRating));
     }
     function validWine(data, experienceId) {
@@ -23,9 +25,14 @@ service cloud.firestore {
         && data.name.size() <= 200
         && (!('confirmedName' in data) || (data.confirmedName is string && data.confirmedName.size() <= 200))
         && (!('note' in data) || (data.note is string && data.note.size() <= 2000))
+        && (!('rating' in data) || validRating(data.rating))
+        && (!('wineType' in data) || validWineType(data.wineType))
+        && (!('varietal' in data) || (data.varietal is string && data.varietal.size() <= 100))
+        && (!('captureMode' in data) || data.captureMode == 'tasting' || data.captureMode == 'quick_add')
+        && (!('captureMode' in data) || data.captureMode != 'quick_add' || (('rating' in data) && validRating(data.rating) && ('wineType' in data) && validWineType(data.wineType)))
         && (data.status == 'draft' || data.status == 'waiting_upload' || data.status == 'processing' || data.status == 'ready' || data.status == 'error')
         && ((data.status == 'draft' && (!('reaction' in data) || validReaction(data.reaction)))
-          || (data.status != 'draft' && ('reaction' in data && validReaction(data.reaction))));
+          || (data.status != 'draft' && ((('captureMode' in data && data.captureMode == 'quick_add') && ('rating' in data) && validRating(data.rating)) || ('reaction' in data && validReaction(data.reaction)))));
     }
 
     match /users/{userId} {
