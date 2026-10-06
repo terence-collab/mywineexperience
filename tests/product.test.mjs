@@ -6,7 +6,10 @@ const root = new URL("../", import.meta.url);
 const read = (file) => readFile(new URL(file, root), "utf8");
 
 test("product surface contains the core tasting loop", async () => {
-  const page = await read("app/page.tsx");
+  const page = await read("components/wine-dashboard.tsx");
+  const landing = await read("app/page.tsx");
+  const accountAccess = await read("components/account-access.tsx");
+  const authenticatedApp = await read("app/app/page.tsx");
   assert.match(page, /Start tasting/);
   assert.match(page, /Change farm/);
   assert.match(page, /DATE &amp; TIME/);
@@ -22,8 +25,9 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /organising/);
   assert.match(page, /Add an at-home reflection/);
   assert.match(page, /Update your feeling\? \(optional\)/);
-  assert.match(page, /passwordless email link/);
-  assert.match(page, /Complete magic-link sign-in at the app shell/);
+  assert.match(accountAccess, /passwordless email link/);
+  assert.match(landing, /completePasswordlessSignIn/);
+  assert.match(landing, /completeGoogleRedirectSignIn/);
   assert.match(page, /Add at-home reflection/);
   assert.match(page, /Add a note/);
   assert.match(page, /YOUR NOTE/);
@@ -62,7 +66,15 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /experienceStartedAt/);
   assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
   assert.match(await read("lib/auth.ts"), /GoogleAuthProvider/);
-  assert.match(await read("app/page.tsx"), /Continue with Google/);
+  assert.match(accountAccess, /Continue with Google/);
+  assert.match(landing, /Remember the bottles/);
+  assert.match(landing, /Taste/);
+  assert.match(landing, /Capture/);
+  assert.match(landing, /Remember/);
+  assert.match(landing, /Privacy and your data/);
+  assert.doesNotMatch(landing, /GoogleMapSurface|Find your next|The journal|Buy again/);
+  assert.match(authenticatedApp, /router\.replace\("\/"\)/);
+  assert.match(authenticatedApp, /Opening your private journal/);
   assert.doesNotMatch(await read("app/globals.css"), /#4285f4|#2563eb|#3b82f6/i);
   assert.doesNotMatch(await read("lib/auth.ts"), /signInWithApple/);
   assert.match(await read("app/register-service-worker.tsx"), /serviceWorker.register/);
