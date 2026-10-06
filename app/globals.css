@@ -121,3 +121,67 @@ button, input, textarea, select { font:inherit; }
   .bottom-nav { height:68px; }
   .google-map-surface { height:340px; }
 }
+
+/* The Cellar UI kit: contemporary warm neumorphism. */
+:root { --ink:#2b2025; --muted:#a8a39c; --cream:#faf8f3; --paper:#ffffff; --line:#e7e1d9; --wine:#4d0f2b; --sage:#aab39f; --gold:#c59e3f; --cellar-shadow:rgba(77,15,43,.14); }
+body { background:var(--cream); color:var(--ink); }
+.app-shell { background:var(--cream); }
+.topbar { height:76px; background:rgba(255,255,255,.78); border-bottom:1px solid var(--line); box-shadow:0 4px 16px rgba(77,15,43,.04); }
+.brand-mark { color:var(--wine); letter-spacing:.24em; }
+.topbar-right { color:#817a74; }
+.avatar,.large-avatar { background:var(--paper); color:var(--wine); box-shadow:4px 5px 12px var(--cellar-shadow), inset 1px 1px 0 #fff; }
+.page-content { max-width:1060px; padding-top:54px; }
+.page-heading h1,.section-row h2,.list-view h1 { color:var(--ink); letter-spacing:-.065em; }
+.page-heading em,.section-row em,.list-view em,.sheet em { color:var(--wine); }
+.eyebrow { color:var(--wine); letter-spacing:.2em; }
+.muted,.intro-copy,.detail-copy { color:#817a74; }
+.map-card,.journal-card,.profile-card,.account-form,.active-experience-panel { border:0; border-radius:24px; box-shadow:10px 14px 30px rgba(77,15,43,.08), -7px -7px 18px rgba(255,255,255,.8); overflow:hidden; }
+.map-toolbar { padding:16px; background:var(--paper); }
+.search-field { height:50px; background:var(--paper); border:0; border-radius:13px; box-shadow:inset 3px 3px 8px rgba(77,15,43,.08), inset -2px -2px 5px rgba(255,255,255,.9); }
+.search-field input::placeholder { color:#a8a39c; }
+.filter-pill,.filter-row select { border:0; border-radius:12px; background:var(--paper); color:var(--wine); box-shadow:4px 5px 12px rgba(77,15,43,.09), inset 1px 1px 0 #fff; }
+.map-art,.google-map-surface { border-radius:0; }
+.farm-preview { background:var(--paper); padding:28px; }
+.farm-preview h2,.journal-row h3,.wine-info h3,.card-copy h2 { color:var(--ink); }
+.round-arrow,.primary-button { background:var(--wine); border-radius:14px; box-shadow:5px 7px 14px rgba(77,15,43,.2), inset 1px 1px 0 rgba(255,255,255,.22); }
+.round-arrow { border-radius:50%; }
+.start-button { background:var(--wine); border-color:var(--cream); border-radius:22px; box-shadow:7px 10px 22px rgba(77,15,43,.24), inset 1px 1px 0 rgba(255,255,255,.25); }
+.start-button svg { color:var(--gold); }
+.bottom-nav { height:78px; background:rgba(255,255,255,.86); border-top:1px solid var(--line); box-shadow:0 -8px 24px rgba(77,15,43,.05); }
+.bottom-nav button { min-width:62px; padding:8px 12px; border-radius:15px; }
+.bottom-nav button.selected { color:var(--wine); background:var(--paper); box-shadow:4px 5px 12px rgba(77,15,43,.1), inset 1px 1px 0 #fff; }
+.bottom-nav button:not(.selected) { color:#99928c; }
+.experience-bar { background:var(--wine); border-radius:17px; box-shadow:8px 10px 20px rgba(77,15,43,.2); }
+.experience-bar button { background:var(--gold); border-radius:10px; }
+.sheet { background:var(--paper); border:0; border-radius:28px 28px 0 0; box-shadow:0 -18px 45px rgba(77,15,43,.16); }
+.sheet-handle { background:#d4c7b5; }
+.selected-farm,.account-status { border:0; border-radius:16px; background:var(--cream); box-shadow:inset 3px 3px 8px rgba(77,15,43,.06), inset -2px -2px 5px #fff; }
+.account-form { overflow:visible; }
+.account-form input,.name-input,.farm-note { border:0; border-radius:12px; background:var(--cream); box-shadow:inset 3px 3px 8px rgba(77,15,43,.07), inset -2px -2px 5px #fff; }
+.google-button { border:0; border-radius:12px; background:var(--paper); box-shadow:4px 5px 12px rgba(77,15,43,.09), inset 1px 1px 0 #fff; }
+.google-mark { color:var(--gold); }
+.capture-action,.reflection { background:var(--cream); border:0; border-radius:14px; box-shadow:4px 5px 12px rgba(77,15,43,.07), inset 1px 1px 0 #fff; }
+.capture-action.recording { background:#f5e8eb; border:1px solid rgba(77,15,43,.22); }
+.reaction-grid button,.review-filter { border:0; border-radius:12px; background:var(--cream); box-shadow:4px 5px 10px rgba(77,15,43,.07), inset 1px 1px 0 #fff; }
+.reaction-grid button.chosen,.review-filter.active { background:#f3e3e8; color:var(--wine); border:1px solid rgba(77,15,43,.22); }
+.journal-card { overflow:hidden; }
+.card-photo { min-height:270px; }
+.wine-art { border-radius:14px; box-shadow:5px 7px 12px rgba(77,15,43,.14); }
+.wine-art.gold { background:linear-gradient(140deg,#b78a32,#e8d59b); }
+.wine-art.purple { background:linear-gradient(140deg,#3c0c24,#7a3655); }
+.wine-art.green { background:linear-gradient(140deg,#5d704e,#c7ceaa); }
+.wine-art.rose { background:linear-gradient(140deg,#9d5b68,#edc8bd); }
+.reaction-chip { border-radius:8px; }
+.settings-list,.data-tools { border-top:0; }
+.settings-list button,.settings-link,.data-tools button { border-bottom:1px solid var(--line); }
+.settings-list button:hover,.settings-link:hover,.text-button:hover { color:var(--gold); }
+.detail-photo,.experience-photo { border-radius:18px; }
+.google-map-surface { box-shadow:inset 0 0 0 1px rgba(77,15,43,.08); }
+@media (max-width:700px) {
+  .topbar { height:64px; }
+  .page-content { padding-top:34px; }
+  .map-card { border-radius:20px; }
+  .farm-preview { padding:22px 20px; }
+  .bottom-nav { height:72px; }
+  .start-button { bottom:76px; }
+}
