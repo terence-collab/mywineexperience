@@ -448,15 +448,20 @@ body { background:var(--cream); color:var(--ink); }
   .start-button { bottom:76px; }
 }
 
-/* Arctic Translucency: clear frosted glass with polished Chardonnay accents. */
+/* Arctic Translucency: clear frosted glass with muted red-wine accents. */
 :root {
   --ink: #1d2830;
   --muted: #74818a;
   --cream: #edf3f5;
   --paper: rgba(255, 255, 255, .64);
   --line: rgba(164, 184, 194, .52);
-  --wine: #bc8922;
-  --gold: #e0b64f;
+  --wine: #7a3e48;
+  --wine-strong: #63313a;
+  --wine-soft: #f1e3e5;
+  --wine-focus: rgba(122, 62, 72, .46);
+  --wine-border: rgba(122, 62, 72, .56);
+  --wine-shadow: rgba(122, 62, 72, .22);
+  --gold: #b98216;
   --sage: #9eb1ae;
   --cellar-shadow: rgba(111, 126, 134, .18);
   --glass-edge: rgba(255, 255, 255, .82);
@@ -481,7 +486,7 @@ body::before {
   background:
     radial-gradient(circle at 14% 18%, rgba(255, 255, 255, .98) 0 8%, transparent 28%),
     radial-gradient(circle at 82% 14%, rgba(220, 237, 232, .95) 0 7%, transparent 29%),
-    radial-gradient(circle at 68% 88%, rgba(245, 224, 172, .52) 0 8%, transparent 25%),
+    radial-gradient(circle at 68% 88%, rgba(225, 190, 196, .52) 0 8%, transparent 25%),
     linear-gradient(135deg, #eaf1f4 0%, #f8faf9 48%, #e2edf0 100%);
   filter: blur(34px);
   transform: scale(1.08);
@@ -508,12 +513,12 @@ body::before {
 
 .topbar { height: 76px; }
 .brand-mark,
-.eyebrow { color: #a8781d; }
+.eyebrow { color: var(--wine); }
 .brand-mark {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  color: #a8781d;
+  color: var(--wine);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 17px;
   font-weight: 400;
@@ -533,7 +538,7 @@ body::before {
 .avatar,
 .large-avatar {
   background: rgba(255, 255, 255, .7);
-  color: #a8781d;
+  color: var(--wine);
   border: 1px solid var(--glass-edge);
   box-shadow: 0 7px 16px rgba(111, 126, 134, .14), inset 0 1px 0 #fff;
 }
@@ -552,7 +557,7 @@ body::before {
 .sheet em,
 .landing-copy h1 em,
 .landing-how h2 em {
-  color: #bd8a23;
+  color: var(--gold);
 }
 
 .muted,
@@ -595,15 +600,15 @@ body::before {
 
 .search-field { height: 54px; }
 .search-field:focus-within {
-  border-color: rgba(224, 182, 79, .78);
-  box-shadow: 0 8px 18px rgba(111, 126, 134, .15), 0 0 0 3px rgba(224, 182, 79, .16), inset 0 1px 0 #fff;
+  border-color: var(--wine-border);
+  box-shadow: 0 8px 18px rgba(111, 126, 134, .15), 0 0 0 3px rgba(122, 62, 72, .16), inset 0 1px 0 #fff;
 }
 
 .search-field input::placeholder { color: #8a979e; }
-.filter-pill { min-height: 54px; color: #9d711c; }
+.filter-pill { min-height: 54px; color: var(--wine); }
 .filter-pill:hover,
 .landing-sign-in:hover,
-.google-button:hover { border-color: rgba(224, 182, 79, .74); }
+.google-button:hover { border-color: var(--wine-border); }
 .map-art,
 .google-map-surface { border-radius: 0; }
 .farm-preview { background: rgba(255, 255, 255, .62); }
@@ -616,20 +621,21 @@ body::before {
 .primary-button,
 .landing-cta,
 .start-button {
-  background: linear-gradient(135deg, #d3a43d 0%, #efcb70 48%, #bd8720 100%);
+  background: var(--wine);
   color: #fff;
   border-color: rgba(255, 255, 255, .78);
-  box-shadow: 0 8px 16px rgba(143, 108, 35, .28), inset 0 1px 0 rgba(255, 255, 255, .76), inset 0 -1px 0 rgba(129, 86, 8, .22);
-  text-shadow: 0 1px 1px rgba(102, 71, 14, .28);
+  box-shadow: 0 8px 16px var(--wine-shadow), inset 0 1px 0 rgba(255, 255, 255, .28);
+  text-shadow: none;
 }
 
 .round-arrow { border-radius: 50%; }
 .start-button { border-width: 4px; border-radius: 18px; }
-.start-button svg { color: #fff8dc; }
+.start-button svg,
+.landing-cta span { color: #fff; }
 .bottom-nav { height: 78px; }
 .bottom-nav button { color: #7d8a91; }
 .bottom-nav button.selected {
-  color: #a8781d;
+  color: var(--wine);
   background: rgba(255, 255, 255, .68);
   border: 1px solid rgba(255, 255, 255, .88);
   box-shadow: 0 7px 16px rgba(111, 126, 134, .14), inset 0 1px 0 #fff;
@@ -645,8 +651,8 @@ body::before {
   -webkit-backdrop-filter: blur(22px);
 }
 
-.experience-bar .eyebrow { color: #a8781d; }
-.experience-bar button { background: linear-gradient(135deg, #d3a43d, #e9c76d); color: #fff; border-radius: 11px; }
+.experience-bar .eyebrow { color: var(--wine); }
+.experience-bar button { background: var(--wine); color: #fff; border-radius: 11px; box-shadow: 0 6px 14px var(--wine-shadow); }
 .sheet {
   background: rgba(248, 252, 253, .78);
   border: 1px solid rgba(255, 255, 255, .86);
@@ -674,31 +680,31 @@ body::before {
 .account-form { overflow: visible; }
 .account-form input:focus,
 .name-input:focus-within,
-.farm-note:focus { outline: 2px solid rgba(224, 182, 79, .46); outline-offset: 1px; }
+.farm-note:focus { outline: 2px solid var(--wine-focus); outline-offset: 1px; }
 .google-button { color: var(--ink); }
-.google-mark { color: #c18d22; }
-.capture-action.recording { background: rgba(255, 237, 199, .68); border-color: rgba(224, 182, 79, .76); }
+.google-mark { color: var(--wine); }
+.capture-action.recording { background: var(--wine-soft); border-color: var(--wine-border); }
 .reaction-grid button.chosen,
-.review-filter.active { background: rgba(246, 216, 142, .5); color: #9a6c14; border-color: rgba(224, 182, 79, .72); }
+.review-filter.active { background: var(--wine-soft); color: var(--wine); border-color: var(--wine-border); }
 .selected-farm strong,
 .account-status strong { color: var(--ink); }
 .selected-farm p,
 .account-status p { color: #718089; }
 .action-icon,
 .farm-icon,
-.photo-queued { background: rgba(255, 255, 255, .7); color: #b17d18; border: 1px solid rgba(255, 255, 255, .86); }
+.photo-queued { background: rgba(255, 255, 255, .7); color: var(--wine); border: 1px solid rgba(255, 255, 255, .86); }
 .wine-art { border-radius: 14px; box-shadow: 0 8px 16px rgba(111, 126, 134, .16), inset 0 1px 0 rgba(255, 255, 255, .5); }
 .wine-art.gold { background: linear-gradient(140deg, #b8831f, #f5d987); }
 .wine-art.purple { background: linear-gradient(140deg, #65747b, #c8d6d8); }
 .wine-art.green { background: linear-gradient(140deg, #718c84, #d4dfca); }
 .wine-art.rose { background: linear-gradient(140deg, #ba8f67, #f2dbb0); }
-.reaction-chip.loved { color: #996b14; background: rgba(246, 216, 142, .54); }
+.reaction-chip.loved { color: var(--wine); background: var(--wine-soft); }
 .settings-list button,
 .settings-link,
 .data-tools button { border-bottom-color: rgba(164, 184, 194, .46); }
 .settings-list button:hover,
 .settings-link:hover,
-.text-button:hover { color: #ad7918; }
+.text-button:hover { color: var(--wine-strong); }
 .detail-photo,
 .experience-photo { border-radius: 18px; box-shadow: 0 8px 18px rgba(111, 126, 134, .12); }
 
@@ -711,7 +717,7 @@ body::before {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.landing-sign-in { color: #9f7119; }
+.landing-sign-in { color: var(--wine); }
 .landing-lead { color: #6e7d85; }
 .landing-reassurance { color: #74818a; }
 .landing-card {
@@ -727,9 +733,10 @@ body::before {
   backdrop-filter: blur(22px) saturate(125%);
   -webkit-backdrop-filter: blur(22px) saturate(125%);
 }
-.landing-steps h3 { color: #b17d18; }
+.landing-steps h3 { color: var(--wine); }
+.landing-steps span { color: var(--wine); }
 .landing-footer { border-top-color: rgba(164, 184, 194, .46); color: #74818a; }
-.landing-footer a { color: #a8781d; }
+.landing-footer a { color: var(--wine); }
 
 @media (max-width: 700px) {
   .topbar { height: 64px; }
@@ -830,14 +837,14 @@ body::before {
   width: min(100%, 92px);
   min-height: 58px;
   color: #fff;
-  background: linear-gradient(135deg, #d3a43d 0%, #efcb70 48%, #bd8720 100%);
+  background: var(--wine);
   border: 3px solid rgba(255, 255, 255, .86);
   border-radius: 18px;
-  box-shadow: 0 8px 18px rgba(143, 108, 35, .28), inset 0 1px 0 rgba(255, 255, 255, .76);
-  text-shadow: 0 1px 1px rgba(102, 71, 14, .28);
+  box-shadow: 0 8px 18px var(--wine-shadow), inset 0 1px 0 rgba(255, 255, 255, .28);
+  text-shadow: none;
 }
 
-.bottom-nav button.nav-action svg { color: #fff8dc; }
+.bottom-nav button.nav-action svg { color: #fff; }
 
 /* Keep fixed navigation above the page without allowing the farm preview to show through it. */
 .bottom-nav {
@@ -851,18 +858,18 @@ body::before {
 .map-art { height: 380px; }
 
 .chooser-button { margin-top: 10px; }
-.chooser-secondary { width: 100%; justify-content: center; padding: 15px 18px; margin-top: 8px; border: 1px solid rgba(168, 120, 29, .48); border-radius: 14px; background: rgba(255, 255, 255, .72); box-shadow: 0 6px 14px rgba(111, 126, 134, .1), inset 0 1px 0 #fff; }
+.chooser-secondary { width: 100%; justify-content: center; padding: 15px 18px; margin-top: 8px; border: 1px solid var(--wine-border); border-radius: 14px; background: rgba(255, 255, 255, .72); box-shadow: 0 6px 14px rgba(111, 126, 134, .1), inset 0 1px 0 #fff; }
 .quick-add-sheet { max-height: 94vh; overflow-y: auto; }
 .quick-add-name { margin: 4px 0 10px; }
 .quick-add-field { display: block; margin: 10px 0; }
-.quick-add-field > span { display: block; color: #a8781d; font-size: 9px; font-weight: 700; letter-spacing: .15em; margin-bottom: 6px; }
+.quick-add-field > span { display: block; color: var(--wine); font-size: 9px; font-weight: 700; letter-spacing: .15em; margin-bottom: 6px; }
 .quick-add-field small { color: #7b878d; font-size: 8px; letter-spacing: .08em; }
 .quick-add-field select { width: 100%; min-height: 46px; border: 1px solid rgba(164, 184, 194, .55); border-radius: 12px; background: rgba(255,255,255,.72); padding: 0 12px; color: var(--ink); font: inherit; }
 .quick-add-photo { width: 100%; border-radius: 14px; }
 .quick-add-rating { padding: 8px 0 14px; }
 .quick-add-rating .reaction-label { margin-bottom: 4px; }
 .quick-add-rating .star-row { justify-content: flex-start; }
-.wine-category-line { color: #a8781d; font-size: 10px; letter-spacing: .04em; margin: 6px 0 0; }
+.wine-category-line { color: var(--wine); font-size: 10px; letter-spacing: .04em; margin: 6px 0 0; }
 .wine-row .wine-category-line { margin-top: 4px; }
 
 @media (max-width: 700px) {
@@ -891,11 +898,12 @@ body::before {
 .journal-card-photo { display: block; width: 100%; max-height: 280px; object-fit: cover; }
 .journal-card .card-copy { padding: 24px 24px 28px; }
 .card-open-button { justify-content: flex-end; width: 100%; }
-.wine-stars { color: #b98216; letter-spacing: .08em; white-space: nowrap; }
+.star.active,
+.wine-stars { color: var(--gold); letter-spacing: .08em; white-space: nowrap; }
 .experience-wine { display: block; padding: 18px 0; }
 .experience-wine > strong { display: block; font: 26px Georgia, serif; font-weight: 400; margin-bottom: 7px; }
 .experience-wine > .name-input { width: 100%; margin-bottom: 8px; }
-.experience-wine > .reaction-chip { color: #b98216; background: transparent; font-size: 15px; letter-spacing: .08em; padding: 0; margin: 0 0 5px; }
+.experience-wine > .reaction-chip { color: var(--gold); background: transparent; font-size: 15px; letter-spacing: .08em; padding: 0; margin: 0 0 5px; }
 .experience-wine > .wine-category-line { margin: 0 0 10px; }
 .experience-wine > .text-button { display: inline-flex; margin: 5px 16px 0 0; }
 .experience-wine-main strong { display: block; font: 26px Georgia, serif; font-weight: 400; }

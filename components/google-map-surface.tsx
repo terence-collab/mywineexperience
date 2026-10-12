@@ -61,7 +61,7 @@ export function GoogleMapSurface({ farms, selectedFarm, onSelect }: { farms: Map
             { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#d6ddc7" }] },
             { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9d5cf" }] },
             { featureType: "road", elementType: "geometry", stylers: [{ color: "#f9f5eb" }] },
-            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dfcfb8" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#e8dadd" }] },
             { featureType: "poi", stylers: [{ visibility: "off" }] },
             { elementType: "labels.text.fill", stylers: [{ color: "#713247" }] },
             { elementType: "labels.text.stroke", stylers: [{ color: "#ebe8dd" }] },
