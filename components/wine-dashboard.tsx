@@ -103,6 +103,15 @@ function wineTypeLabel(type?: WineType) {
   return type ? WINE_TYPE_LABELS[type] : "";
 }
 
+function ExperiencePhotoPreview({ path, alt }: { path?: string; alt: string }) {
+  const [url, setUrl] = useState<string>();
+  useEffect(() => {
+    if (!path) return;
+    void getMediaDownloadUrl(path).then(setUrl).catch(() => undefined);
+  }, [path]);
+  return url ? <img className="experience-photo journal-card-photo" src={url} alt={alt} /> : null;
+}
+
 const farms: Farm[] = [
   {
     name: "Boschendal",
@@ -658,6 +667,7 @@ export default function WineDashboard() {
   const [favouriteWineTypeFilter, setFavouriteWineTypeFilter] = useState("all");
   const [favouriteVarietyFilter, setFavouriteVarietyFilter] = useState("all");
   const [favouriteDateFilter, setFavouriteDateFilter] = useState("all");
+  const [favouriteOnly, setFavouriteOnly] = useState("all");
   const [filterReferenceTime] = useState(() => Date.now());
   const [journalSearch, setJournalSearch] = useState("");
   const [journalFarmFilter, setJournalFarmFilter] = useState("all");
@@ -749,9 +759,10 @@ export default function WineDashboard() {
       const matchesVariety = favouriteVarietyFilter === "all" || varietal === favouriteVarietyFilter;
       const matchesDate = !cutoff || Date.parse(experienceItem.startedAt) >= cutoff;
       const isFavourite = wine.reaction === "Loved it" || (!wine.reaction && (wine.rating ?? 0) >= 4);
-      return isFavourite && matchesSearch && matchesFarm && matchesWineType && matchesVariety && matchesDate;
+      const matchesFavourite = favouriteOnly === "all" || isFavourite;
+      return matchesFavourite && matchesSearch && matchesFarm && matchesWineType && matchesVariety && matchesDate;
     });
-  }, [experiences, favouriteDateFilter, favouriteFarmFilter, favouriteSearch, favouriteVarietyFilter, favouriteWineTypeFilter, filterReferenceTime]);
+  }, [experiences, favouriteDateFilter, favouriteFarmFilter, favouriteOnly, favouriteSearch, favouriteVarietyFilter, favouriteWineTypeFilter, filterReferenceTime]);
   const journalMonthOptions = useMemo(() => [...new Set(experiences.map((item) => item.startedAt.slice(0, 7)))].sort().reverse(), [experiences]);
   const needsReviewCount = useMemo(() => experiences.reduce((total, item) => total + (item.wines ?? []).filter((wine) => wine.suggestedIdentity && wine.suggestionStatus !== "confirmed").length, 0), [experiences]);
   const visibleExperiences = useMemo(() => experiences.filter((item) => {
@@ -986,7 +997,8 @@ export default function WineDashboard() {
   }, [selectedWine]);
   useEffect(() => {
     setSelectedExperiencePhotoUrl(undefined);
-    if (selectedExperience?.photoPath) void getMediaDownloadUrl(selectedExperience.photoPath).then(setSelectedExperiencePhotoUrl).catch(() => undefined);
+    const experiencePhotoPath = selectedExperience?.photoPath || selectedExperience?.wines?.[0]?.photoPath;
+    if (experiencePhotoPath) void getMediaDownloadUrl(experiencePhotoPath).then(setSelectedExperiencePhotoUrl).catch(() => undefined);
   }, [selectedExperience]);
   function rememberFarm(farm: Farm) {
     setPersonalFarms((current) => current.some((item) => item.name.toLowerCase() === farm.name.toLowerCase()) ? current : [...current, farm]);
@@ -1465,16 +1477,15 @@ export default function WineDashboard() {
                   key={item.id}
                   onClick={() => setSelectedExperience(item)}
                 >
+                  {(item.photoPath || item.wines?.[0]?.photoPath) && <ExperiencePhotoPreview path={item.photoPath || item.wines?.[0]?.photoPath} alt={`Photo from ${item.farmName}`} />}
                   <div className="card-copy">
-                    <p className="eyebrow">
-                      {item.farmName.toUpperCase()} - {item.town.toUpperCase()}
-                    </p>
-                    <h2>{item.note || "A day worth remembering"}</h2>
+                    {item.experienceType !== "at_home" && <p className="eyebrow">{item.farmName.toUpperCase()} - {item.town.toUpperCase()}</p>}
+                    <h2>{item.experienceType === "at_home" ? item.wines?.[0]?.name || item.note || "Wine experience" : item.note || item.wines?.[0]?.name || "Wine experience"}</h2>
                     <p className="muted">
                       {item.wineCount} {item.wineCount === 1 ? "wine" : "wines"} <span className="wine-stars" aria-label={`${item.rating} out of 5 stars`}>{"★".repeat(item.rating)}</span>
                     </p>
                     {(item.wines ?? []).some((wine) => wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[...new Set((item.wines ?? []).map((wine) => [wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")).filter(Boolean))].join(" / ")}</p>}
-                    <span className="text-button">
+                    <span className="text-button card-open-button">
                       Open experience <Icon name="arrow" />
                     </span>
                   </div>
@@ -1498,13 +1509,17 @@ export default function WineDashboard() {
             <div className="search-control-row">
               <div className="search-field favourites-search">
                 <Icon name="search" />
-                <input value={favouriteSearch} onChange={(event) => setFavouriteSearch(event.target.value)} placeholder="Search your Loved it wines" />
+              <input value={favouriteSearch} onChange={(event) => setFavouriteSearch(event.target.value)} placeholder="Search your wines" />
               </div>
               <button className="filter-toggle" type="button" aria-expanded={favouriteFiltersOpen} onClick={() => setFavouriteFiltersOpen((value) => !value)}>
                 Filters <span aria-hidden="true">{favouriteFiltersOpen ? "−" : "+"}</span>
               </button>
             </div>
             {favouriteFiltersOpen && <div className="filter-row" aria-label="Buy again filters">
+              <select value={favouriteOnly} onChange={(event) => setFavouriteOnly(event.target.value)} aria-label="Filter My Wines by favourite status">
+                <option value="all">All wines</option>
+                <option value="favourites">Favourites</option>
+              </select>
               <select value={favouriteFarmFilter} onChange={(event) => setFavouriteFarmFilter(event.target.value)} aria-label="Filter favourites by farm">
                 <option value="all">All farms</option>
                 {[...new Set(experiences.map((item) => item.farmName))].sort().map((farmName) => <option key={farmName} value={farmName}>{farmName}</option>)}
@@ -1532,14 +1547,14 @@ export default function WineDashboard() {
                     <p className="eyebrow">{wine.status}</p>
                     <h3>{wine.name}</h3>
                     <p className="muted">{experienceItem.farmName} · {[wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ") || wine.detail}</p>
-                    <span className="reaction-chip loved">Loved it</span>
+                    {wine.rating ? <span className="wine-stars" aria-label={`${wine.rating} out of 5 stars`}>{"★".repeat(wine.rating)}</span> : wine.reaction ? <span className="reaction-chip loved">{wine.reaction}</span> : <span className="muted">Not yet rated</span>}
                   </div>
                 </button>
               ))}
             {!favouriteItems.length && (
               <div className="empty-state">
-                <h2>Your buy-again list will grow here.</h2>
-                <p className="muted">Tap Loved it during a tasting to keep a bottle close.</p>
+                <h2>{favouriteOnly === "favourites" ? "Your favourites will grow here." : "Your wines will appear here."}</h2>
+                <p className="muted">Save a wine during a tasting or use Quick Add to keep it in your collection.</p>
               </div>
             )}
           </div>
@@ -1626,7 +1641,7 @@ export default function WineDashboard() {
               ["map", "map", "Map"],
               ["journal", "book", "Journal"],
               ["start", "plus", "Start"],
-              ["favourites", "heart", "Favourites"],
+              ["favourites", "heart", "My Wines"],
               ["profile", "user", "Profile"],
             ] as [Tab | "start", string, string][]
           ).map(([key, icon, label]) => (
@@ -1743,7 +1758,7 @@ export default function WineDashboard() {
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="saved-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
             <p className="eyebrow">EXPERIENCE SAVED</p>
-            <h2 id="saved-sheet-title">A day worth <em>remembering.</em></h2>
+            <h2 id="saved-sheet-title">Wine saved.</h2>
             <p className="muted">{savedExperience.wineCount} wines saved at {savedExperience.farmName}. Any queued photos, voice notes, and enrichment will organise in the background.</p>
             <div className="receipt-actions">
               <button className="primary-button" onClick={() => { setSelectedExperience(savedExperience); setSavedExperience(undefined); }}>View experience <Icon name="arrow" /></button>
@@ -1766,11 +1781,9 @@ export default function WineDashboard() {
             aria-labelledby="experience-detail-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="sheet-handle" />
-            <p className="eyebrow">
-              {selectedExperience.experienceType === "at_home" ? "PERSONAL JOURNAL" : selectedExperience.farmName.toUpperCase()}
-            </p>
-            <h2 id="experience-detail-title">{selectedExperience.note || "A day worth remembering"}</h2>
+            <button className="sheet-handle sheet-close-handle" type="button" aria-label="Close experience details" onClick={() => setSelectedExperience(undefined)}><span /></button>
+            {selectedExperience.experienceType !== "at_home" && <p className="eyebrow">{selectedExperience.farmName.toUpperCase()}</p>}
+            <h2 id="experience-detail-title">{selectedExperience.wines?.[0]?.name || selectedExperience.note || "Wine experience"}</h2>
             <p className="muted">{new Date(selectedExperience.startedAt).toLocaleDateString("en-ZA")} · <span className="wine-stars" aria-label={`${selectedExperience.rating} out of 5 stars`}>{"★".repeat(selectedExperience.rating)}</span> · {selectedExperience.town}</p>
             {selectedExperience.experienceType !== "at_home" && <a className="detail-map-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedExperience.farmName}, ${selectedExperience.town}`)}`} target="_blank" rel="noreferrer">Open farm in Maps <Icon name="arrow" /></a>}
             {selectedExperiencePhotoUrl && <img className="experience-photo" src={selectedExperiencePhotoUrl} alt={`Photo from ${selectedExperience.farmName}`} />}
@@ -1829,21 +1842,18 @@ export default function WineDashboard() {
                 <button className="text-button" onClick={() => setConfirmDeleteId(undefined)}>Keep experience</button>
               </div>
             ) : (
-              <button className="danger-button" onClick={() => setConfirmDeleteId(selectedExperience.id)}>Delete experience</button>
+              <div className="detail-footer-actions">
+                <button className="danger-button" onClick={() => setConfirmDeleteId(selectedExperience.id)}>Delete experience</button>
+                <button className="primary-button sheet-done-button" onClick={() => setSelectedExperience(undefined)}>Done</button>
+              </div>
             )}
-            <button
-              className="primary-button"
-              onClick={() => setSelectedExperience(undefined)}
-            >
-              Done
-            </button>
           </div>
         </div>
       )}
       {selectedWine && (
         <div className="modal-backdrop" onClick={() => setSelectedWine(undefined)}>
           <div className="sheet wine-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="wine-detail-title" onClick={(event) => event.stopPropagation()}>
-            <div className="sheet-handle" />
+            <button className="sheet-handle sheet-close-handle" type="button" aria-label="Close wine details" onClick={() => setSelectedWine(undefined)}><span /></button>
             <p className="eyebrow">WINE DETAIL</p>
             <h2 id="wine-detail-title">{selectedWine.name}</h2>
             {selectedWine.rating ? <span className="reaction-chip loved">{"★".repeat(selectedWine.rating)} / 5</span> : selectedWine.reaction ? <span className="reaction-chip loved">{selectedWine.reaction}</span> : null}
