@@ -58,11 +58,14 @@ test("drafts may omit a reaction, but ready wines may not", async () => {
   await assertFails(db.doc("users/user-a/experiences/experience-a/wines/invalid-a").set({ ...draft, status: "ready" }));
 });
 
-test("quick add wines use a valid rating and wine type without a reaction", async () => {
+test("quick add wines accept a wine type with an optional valid rating", async () => {
   const db = testEnv.authenticatedContext("user-a").firestore();
   const quickAdd = { ...wine, status: "ready", captureMode: "quick_add", rating: 4, wineType: "white" };
   delete quickAdd.reaction;
   await assertSucceeds(db.doc("users/user-a/experiences/experience-a/wines/quick-add-a").set(quickAdd));
+  const quickAddWithoutRating = { ...quickAdd };
+  delete quickAddWithoutRating.rating;
+  await assertSucceeds(db.doc("users/user-a/experiences/experience-a/wines/quick-add-no-rating").set(quickAddWithoutRating));
   await assertFails(db.doc("users/user-a/experiences/experience-a/wines/quick-add-invalid").set({ ...quickAdd, rating: 6 }));
   await assertFails(db.doc("users/user-a/experiences/experience-a/wines/quick-add-invalid-type").set({ ...quickAdd, wineType: "orange" }));
 });

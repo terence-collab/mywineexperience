@@ -23,16 +23,17 @@ service cloud.firestore {
         && data.experienceId == experienceId
         && data.name is string
         && data.name.size() <= 200
+        && (!('detail' in data) || (data.detail is string && data.detail.size() <= 2000))
         && (!('confirmedName' in data) || (data.confirmedName is string && data.confirmedName.size() <= 200))
         && (!('note' in data) || (data.note is string && data.note.size() <= 2000))
         && (!('rating' in data) || validRating(data.rating))
         && (!('wineType' in data) || validWineType(data.wineType))
         && (!('varietal' in data) || (data.varietal is string && data.varietal.size() <= 100))
         && (!('captureMode' in data) || data.captureMode == 'tasting' || data.captureMode == 'quick_add')
-        && (!('captureMode' in data) || data.captureMode != 'quick_add' || (('rating' in data) && validRating(data.rating) && ('wineType' in data) && validWineType(data.wineType)))
+        && (!('captureMode' in data) || data.captureMode != 'quick_add' || ('wineType' in data) && validWineType(data.wineType))
         && (data.status == 'draft' || data.status == 'waiting_upload' || data.status == 'processing' || data.status == 'ready' || data.status == 'error')
         && ((data.status == 'draft' && (!('reaction' in data) || validReaction(data.reaction)))
-          || (data.status != 'draft' && ((('captureMode' in data && data.captureMode == 'quick_add') && ('rating' in data) && validRating(data.rating)) || ('reaction' in data && validReaction(data.reaction)))));
+          || (data.status != 'draft' && ((('captureMode' in data && data.captureMode == 'quick_add') && ('wineType' in data) && validWineType(data.wineType)) || ('reaction' in data && validReaction(data.reaction)))));
     }
 
     match /users/{userId} {

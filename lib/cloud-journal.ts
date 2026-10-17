@@ -39,6 +39,7 @@ export type CloudWine = {
   userId: string;
   experienceId: string;
   name: string;
+  detail?: string;
   note?: string;
   rating?: number;
   wineType?: "red" | "white" | "sparkling" | "rosé" | "fortified" | "dessert" | "other";
@@ -264,8 +265,16 @@ export async function deleteExperience(userId: string, experienceId: string) {
 }
 
 export function toCloudStatus(status: string): CloudWine["status"] {
-  const statuses: CloudWine["status"][] = ["draft", "waiting_upload", "processing", "ready", "error"];
-  return statuses.includes(status as CloudWine["status"]) ? status as CloudWine["status"] : "draft";
+  const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const aliases: Record<string, CloudWine["status"]> = {
+    draft: "draft",
+    waiting_upload: "waiting_upload",
+    waiting_to_upload: "waiting_upload",
+    processing: "processing",
+    ready: "ready",
+    error: "error",
+  };
+  return aliases[normalized] ?? "draft";
 }
 
 export function stripUndefined(value: DocumentData) {

@@ -221,6 +221,7 @@ async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSumm
           userId,
           experienceId: experience.id,
           name: wine.name,
+          detail: wine.detail,
           note: wine.note,
           rating: wine.rating,
           wineType: wine.wineType,
@@ -578,7 +579,7 @@ function CaptureSheet({
   );
 }
 
-function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (value: { name: string; wineType: WineType; varietal?: string; rating: number; photo?: File }) => void }) {
+function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (value: { name: string; wineType: WineType; varietal?: string; rating?: number; photo?: File }) => void }) {
   const [name, setName] = useState("");
   const [wineType, setWineType] = useState<WineType>();
   const [varietal, setVarietal] = useState("");
@@ -924,7 +925,7 @@ export default function WineDashboard() {
                   wineType: wine.wineType,
                   varietal: wine.varietal,
                   captureMode: wine.captureMode,
-                  detail: wine.status,
+                  detail: wine.detail ?? wine.status,
                   reaction: wine.reaction,
                   status: wine.status,
                   error: wine.error,
@@ -1019,6 +1020,7 @@ export default function WineDashboard() {
   function begin() {
     const experienceId = crypto.randomUUID();
     const startedAt = startDateTime ? new Date(startDateTime).toISOString() : new Date().toISOString();
+    const uid = auth?.currentUser?.uid;
     setFullTastingOpen(false);
     setActiveExperienceId(experienceId);
     setExperienceStartedAt(startedAt);
@@ -1058,16 +1060,66 @@ export default function WineDashboard() {
     setRating(0);
     setNote("");
     setExperience(true);
+    if (uid && firebaseEnabled) {
+      void saveCloudExperience({
+        id: experienceId,
+        userId: uid,
+        farmId: selectedFarm.name.toLowerCase().replaceAll(" ", "-"),
+        farmName: selectedFarm.name,
+        farmTown: selectedFarm.town,
+        farmNote: selectedFarm.note,
+        startedAt: Date.parse(startedAt),
+        status: "active",
+        wineCount: 0,
+      }).catch(() => undefined);
+    }
     trackEvent("experience_started", { online: navigator.onLine });
   }
+  function persistActiveWine(wine: Wine, wineCount: number) {
+    const uid = auth?.currentUser?.uid;
+    if (!uid || !firebaseEnabled || !activeExperienceId) return;
+    void Promise.all([
+      saveCloudExperience({
+        id: activeExperienceId,
+        userId: uid,
+        farmId: selectedFarm.name.toLowerCase().replaceAll(" ", "-"),
+        farmName: selectedFarm.name,
+        farmTown: selectedFarm.town,
+        farmNote: selectedFarm.note,
+        startedAt: Date.parse(experienceStartedAt ?? new Date().toISOString()),
+        status: "active",
+        wineCount,
+        location: experienceLocation,
+      }),
+      saveCloudWine({
+        id: String(wine.id),
+        userId: uid,
+        experienceId: activeExperienceId,
+        name: wine.name,
+        detail: wine.detail,
+        note: wine.note,
+        rating: wine.rating,
+        wineType: wine.wineType,
+        varietal: wine.varietal,
+        captureMode: wine.captureMode,
+        reaction: wine.reaction,
+        status: toCloudStatus(wine.status),
+        audioPath: wine.audioPath,
+        photoPath: wine.photoPath,
+        createdAt: Date.now(),
+      }),
+    ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
+  }
   function saveWine(wine: Wine) {
-    setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
+    const nextWines = wines.some((item) => item.id === wine.id) ? wines.map((item) => item.id === wine.id ? wine : item) : [...wines, wine];
+    setWines(nextWines);
+    persistActiveWine(wine, nextWines.length);
     setCaptureDraft(undefined);
     setCaptureOpen(false);
     trackEvent("wine_saved", { kind: wine.audio || wine.photo ? "media" : "manual", online: navigator.onLine });
   }
 
-  function saveQuickAdd(value: { name: string; wineType: WineType; varietal?: string; rating: number; photo?: File }) {
+  function saveQuickAdd(value: { name: string; wineType: WineType; varietal?: string; rating?: number; photo?: File }) {
     const experienceId = crypto.randomUUID();
     const wineId = 1;
     const startedAt = new Date().toISOString();
@@ -1088,7 +1140,7 @@ export default function WineDashboard() {
       farmName: "At home",
       town: "Personal journal",
       startedAt,
-      rating: value.rating,
+      rating: value.rating ?? 0,
       wineCount: 1,
       experienceType: "at_home",
       wines: [wine],
@@ -1105,7 +1157,7 @@ export default function WineDashboard() {
     if (uid && firebaseEnabled) {
       void Promise.all([
         saveCloudExperience({ id: experienceId, userId: uid, farmId: "at-home", farmName: "At home", farmTown: "Personal journal", startedAt: Date.parse(startedAt), status: "completed", wineCount: 1, overallRating: value.rating, experienceType: "at_home" }),
-        saveCloudWine({ id: String(wineId), userId: uid, experienceId, name: wine.name, rating: wine.rating, wineType: wine.wineType, varietal: wine.varietal, captureMode: "quick_add", status: "ready", createdAt: Date.now() }),
+        saveCloudWine({ id: String(wineId), userId: uid, experienceId, name: wine.name, detail: wine.detail, rating: wine.rating, wineType: wine.wineType, varietal: wine.varietal, captureMode: "quick_add", status: "ready", createdAt: Date.now() }),
       ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
     }
   }
@@ -1113,7 +1165,9 @@ export default function WineDashboard() {
     setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
   }, []);
   function saveWineDraft(wine: Wine) {
-    updateWineDraft(wine);
+    const nextWines = wines.some((item) => item.id === wine.id) ? wines.map((item) => item.id === wine.id ? wine : item) : [...wines, wine];
+    setWines(nextWines);
+    persistActiveWine(wine, nextWines.length);
     setCaptureDraft(undefined);
     setCaptureOpen(false);
   }
@@ -1162,6 +1216,7 @@ export default function WineDashboard() {
               userId: uid,
               experienceId: summary.id,
               name: wine.name,
+              detail: wine.detail,
               note: wine.note,
               reaction: wine.reaction,
               status: toCloudStatus(wine.status),
@@ -1222,7 +1277,7 @@ export default function WineDashboard() {
     setWines((current) => current.map((wine) => wine.id === editingWineId ? { ...wine, name, confirmedName: name, suggestionStatus: "confirmed" } : wine));
     const updatedWine = updated.wines?.find((wine) => wine.id === editingWineId);
     const uid = auth?.currentUser?.uid;
-    if (uid && firebaseEnabled && updatedWine?.reaction)
+    if (uid && firebaseEnabled && updatedWine)
       void saveCloudWine({
         id: String(editingWineId),
         userId: uid,
@@ -1256,7 +1311,7 @@ export default function WineDashboard() {
     setSelectedWine(updatedWine);
     trackEvent("suggestion_reviewed", { status });
     const uid = auth?.currentUser?.uid;
-    if (uid && firebaseEnabled && updatedWine.reaction)
+    if (uid && firebaseEnabled)
       void saveCloudWine({
         id: String(updatedWine.id),
         userId: uid,
