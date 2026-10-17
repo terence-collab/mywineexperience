@@ -5,7 +5,6 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -165,8 +164,14 @@ export async function retryEnrichmentJob(userId: string, experienceId: string, w
 
 export async function listExperiences(userId: string) {
   const firestore = requireDb();
-  const snapshot = await getDocs(query(collection(firestore, "users", userId, "experiences"), orderBy("startedAt", "desc")));
-  return Promise.all(snapshot.docs.map(async (item) => {
+  // Firestore evaluates collection queries against the rule, rather than the
+  // parent path alone. Keep the owner constraint in the query so an otherwise
+  // valid signed-in user can rehydrate their own journal after a reload.
+  const snapshot = await getDocs(query(
+    collection(firestore, "users", userId, "experiences"),
+    where("userId", "==", userId),
+  ));
+  const experiences = await Promise.all(snapshot.docs.map(async (item) => {
     const winesSnapshot = await getDocs(collection(item.ref, "wines"));
     const wines = await Promise.all(winesSnapshot.docs.map(async (wine) => {
       const reflectionsSnapshot = await getDocs(collection(wine.ref, "reflections"));
@@ -174,6 +179,7 @@ export async function listExperiences(userId: string) {
     }));
     return { id: item.id, ...item.data(), wines } as CloudExperience;
   }));
+  return experiences.sort((left, right) => right.startedAt - left.startedAt);
 }
 
 /**
@@ -195,7 +201,10 @@ export function subscribeExperiences(
   }
 
   const experienceUnsubscribe = onSnapshot(
-    query(collection(firestore, "users", userId, "experiences"), orderBy("startedAt", "desc")),
+    query(
+      collection(firestore, "users", userId, "experiences"),
+      where("userId", "==", userId),
+    ),
     (snapshot) => {
       const currentIds = new Set(snapshot.docs.map((item) => item.id));
       for (const [experienceId, unsubscribe] of wineUnsubscribers) {
