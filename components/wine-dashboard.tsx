@@ -315,6 +315,11 @@ function CaptureSheet({
   const chunks = useRef<Blob[]>([]);
   const photoQueueId = useRef<string | undefined>(undefined);
   const input = useRef<HTMLInputElement>(null);
+  // A capture can auto-save while the parent list updates. Allocate its id and
+  // visual tone once so the autosave never turns one in-progress pour into a
+  // new draft on every render.
+  const [captureWineId] = useState(() => draft?.id ?? wines.length + 1);
+  const [captureTone] = useState(() => draft?.tone ?? (wines.length % 2 ? "rose" : "gold"));
   useEffect(() => {
     if (!recording) return;
     const startedAt = Date.now();
@@ -350,7 +355,7 @@ function CaptureSheet({
           id: crypto.randomUUID(),
           userId: auth?.currentUser?.uid,
           experienceId,
-           wineId: String(draft?.id ?? wines.length + 1),
+           wineId: String(captureWineId),
           kind: "audio",
           retainAudio,
           blob: new Blob(chunks.current, {
@@ -367,7 +372,7 @@ function CaptureSheet({
   function choosePhoto(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const wineId = draft?.id ?? wines.length + 1;
+    const wineId = captureWineId;
     const previousQueueId = photoQueueId.current;
     if (previousQueueId) void removeQueuedMedia(previousQueueId);
     const queueId = crypto.randomUUID();
@@ -389,7 +394,7 @@ function CaptureSheet({
   }
   function save() {
     if (!reaction) return;
-    const wineId = draft?.id ?? wines.length + 1;
+    const wineId = captureWineId;
     onSave({
       id: wineId,
       name: name.trim() || "New wine",
@@ -400,7 +405,7 @@ function CaptureSheet({
        detail: `${audioCaptured ? "Voice note" : "Quick capture"}${photo || photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Waiting to upload",
-       tone: draft?.tone ?? (wines.length % 2 ? "rose" : "gold"),
+       tone: captureTone,
       audio: audioCaptured,
        photo: photoCaptured,
     });
@@ -411,7 +416,7 @@ function CaptureSheet({
       return;
     }
     onSaveDraft({
-      id: draft?.id ?? wines.length + 1,
+      id: captureWineId,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
       wineType,
@@ -420,7 +425,7 @@ function CaptureSheet({
       detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Draft",
-      tone: wines.length % 2 ? "rose" : "gold",
+      tone: captureTone,
       audio: audioCaptured,
       photo: photoCaptured,
     });
@@ -428,7 +433,7 @@ function CaptureSheet({
   useEffect(() => {
     if (!name.trim() && !audioCaptured && !photoCaptured && !reaction) return;
     onAutoSaveDraft({
-      id: draft?.id ?? wines.length + 1,
+      id: captureWineId,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
       wineType,
@@ -437,11 +442,11 @@ function CaptureSheet({
       detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
       status: "Draft",
-      tone: draft?.tone ?? (wines.length % 2 ? "rose" : "gold"),
+      tone: captureTone,
       audio: audioCaptured,
       photo: photoCaptured,
     });
-  }, [audioCaptured, draft?.id, draft?.tone, name, note, onAutoSaveDraft, photoCaptured, reaction, varietal, wineType, wines.length]);
+  }, [audioCaptured, captureTone, captureWineId, name, note, onAutoSaveDraft, photoCaptured, reaction, varietal, wineType]);
   return (
     <div className="modal-backdrop" onClick={saveDraft}>
       <div
@@ -455,7 +460,7 @@ function CaptureSheet({
         <div className="capture-header">
           <div>
             <p className="eyebrow">
-              POUR {draft?.id ?? wines.length + 1} · READY WHEN YOU ARE
+              POUR {captureWineId} · READY WHEN YOU ARE
             </p>
             <h2 id="capture-sheet-title">
               What would you like to <em>remember?</em>

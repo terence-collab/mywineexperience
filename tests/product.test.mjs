@@ -67,6 +67,8 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /personalFarms/);
   assert.match(page, /makePersonalFarm/);
   assert.match(page, /experienceStartedAt/);
+  assert.match(page, /const \[captureWineId\] = useState/);
+  assert.doesNotMatch(page, /onAutoSaveDraft[\s\S]{0,1200}wines\.length\]\);/);
   assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
   assert.match(await read("lib/auth.ts"), /GoogleAuthProvider/);
   assert.match(await read("lib/auth.ts"), /signInWithPopup/);
