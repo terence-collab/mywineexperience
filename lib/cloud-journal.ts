@@ -172,9 +172,9 @@ export async function listExperiences(userId: string) {
     where("userId", "==", userId),
   ));
   const experiences = await Promise.all(snapshot.docs.map(async (item) => {
-    const winesSnapshot = await getDocs(collection(item.ref, "wines"));
+    const winesSnapshot = await getDocs(query(collection(item.ref, "wines"), where("userId", "==", userId)));
     const wines = await Promise.all(winesSnapshot.docs.map(async (wine) => {
-      const reflectionsSnapshot = await getDocs(collection(wine.ref, "reflections"));
+      const reflectionsSnapshot = await getDocs(query(collection(wine.ref, "reflections"), where("userId", "==", userId)));
       return { id: wine.id, ...wine.data(), reflections: reflectionsSnapshot.docs.map((reflection) => ({ id: reflection.id, ...reflection.data() })) } as CloudWine;
     }));
     return { id: item.id, ...item.data(), wines } as CloudExperience;
@@ -221,10 +221,10 @@ export function subscribeExperiences(
         if (wineUnsubscribers.has(item.id)) continue;
 
         const unsubscribe = onSnapshot(
-          collection(item.ref, "wines"),
+          query(collection(item.ref, "wines"), where("userId", "==", userId)),
           (wineSnapshot) => {
             void Promise.all(wineSnapshot.docs.map(async (wine) => {
-              const reflectionsSnapshot = await getDocs(collection(wine.ref, "reflections"));
+              const reflectionsSnapshot = await getDocs(query(collection(wine.ref, "reflections"), where("userId", "==", userId)));
               return {
                 id: wine.id,
                 ...wine.data(),
@@ -260,11 +260,15 @@ export async function deleteExperience(userId: string, experienceId: string) {
   // Remove Storage objects first. If this fails, keep the Firestore record so
   // the user can retry instead of leaving an apparently deleted orphan.
   await deleteExperienceMedia(userId, experienceId);
-  const wines = await getDocs(collection(experienceRef, "wines"));
-  const jobs = await getDocs(query(collection(firestore, "users", userId, "processingJobs"), where("experienceId", "==", experienceId)));
+  const wines = await getDocs(query(collection(experienceRef, "wines"), where("userId", "==", userId)));
+  const jobs = await getDocs(query(
+    collection(firestore, "users", userId, "processingJobs"),
+    where("userId", "==", userId),
+    where("experienceId", "==", experienceId),
+  ));
   const batch = writeBatch(firestore);
   for (const wine of wines.docs) {
-    const reflections = await getDocs(collection(wine.ref, "reflections"));
+    const reflections = await getDocs(query(collection(wine.ref, "reflections"), where("userId", "==", userId)));
     reflections.docs.forEach((reflection) => batch.delete(reflection.ref));
     batch.delete(wine.ref);
   }

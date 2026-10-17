@@ -6,6 +6,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 const projectId = process.env.GCLOUD_PROJECT ?? "wine-experience-rules-test";
 let testEnv;
@@ -61,6 +62,13 @@ test("owners can create valid experiences and wines", async () => {
 test("users cannot read another user's journal", async () => {
   const db = testEnv.authenticatedContext("user-b").firestore();
   await assertFails(db.doc("users/user-a/experiences/experience-a").get());
+});
+
+test("journal collection reads use the signed-in owner constraint", async () => {
+  const db = testEnv.authenticatedContext("user-a").firestore();
+  const experiences = collection(db, "users", "user-a", "experiences");
+  await assertSucceeds(getDocs(query(experiences, where("userId", "==", "user-a"))));
+  await assertFails(getDocs(experiences));
 });
 
 test("drafts may omit a reaction, but ready wines may not", async () => {
