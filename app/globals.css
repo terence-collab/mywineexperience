@@ -934,6 +934,22 @@ body::before {
 .experience-detail-note { margin: 18px 0; color: var(--ink); font: 18px Georgia, serif; line-height: 1.45; }
 .detail-section-title { margin: 24px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--wine); font-size: 10px; font-weight: 700; letter-spacing: .16em; }
 
+/* Keep the interface focused on the content headline, not category labels. */
+.app-shell .eyebrow { display: none; }
+.journal-card-context,
+.experience-context { margin: 7px 0 16px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.journal-card-bottles { display: grid; gap: 10px; margin-top: 16px; text-align: left; }
+.journal-card-bottle { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.journal-card-bottle strong { font: 20px Georgia, serif; font-weight: 400; color: var(--ink); }
+.journal-card-bottle > span:not(.wine-stars):not(.reaction-chip) { color: var(--muted); font-size: 12px; align-self: center; text-align: right; }
+.journal-card-bottle .wine-stars,
+.journal-card-bottle .reaction-chip { grid-column: 1 / -1; }
+.journal-card-bottle p { grid-column: 1 / -1; margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.experience-context { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.experience-wine { padding: 24px 0; }
+.experience-wine .experience-photo { margin: 0 0 15px; }
+.detail-footer-actions .sheet-done-button { margin-top: 0; }
+
 @media (max-width: 700px) {
   .search-control-row { gap: 8px; }
   .filter-toggle { min-width: 78px; }

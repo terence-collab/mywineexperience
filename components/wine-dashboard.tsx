@@ -602,8 +602,7 @@ function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (valu
         <div className="sheet-handle" />
         <div className="capture-header">
           <div>
-            <p className="eyebrow">KEEP A BOTTLE</p>
-            <h2 id="quick-add-title">A bottle for <em>later.</em></h2>
+            <h2 id="quick-add-title">Keep a <em>bottle.</em></h2>
           </div>
           <button className="close-button" aria-label="Close quick add" onClick={onClose}>×</button>
         </div>
@@ -639,7 +638,7 @@ function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (valu
             {[1, 2, 3, 4, 5].map((value) => <button key={value} className={rating >= value ? "star active" : "star"} aria-label={`${value} out of 5 stars`} onClick={() => setRating(value)}>★</button>)}
           </div>
         </div>
-        <button className="primary-button" disabled={!name.trim() || !wineType || !rating || (varietal === "Other" && !customVarietal.trim())} onClick={() => wineType && onSave({ name: name.trim(), wineType, varietal: selectedVarietal || undefined, rating, photo })}>Keep this bottle <Icon name="arrow" /></button>
+        <button className="primary-button" disabled={!name.trim() || !wineType || (varietal === "Other" && !customVarietal.trim())} onClick={() => wineType && onSave({ name: name.trim(), wineType, varietal: selectedVarietal || undefined, rating, photo })}>Keep this bottle <Icon name="arrow" /></button>
       </div>
     </div>
   );
@@ -1477,7 +1476,7 @@ export default function WineDashboard() {
                   const savedWines = item.wines ?? [];
                   const wineNames = savedWines.map((wine) => wine.name).filter((name) => name && name !== "Wine experience");
                   const date = new Date(item.startedAt).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
-                  const title = item.experienceType === "at_home" ? wineNames[0] || "A bottle worth keeping" : item.farmName || "Wine experience";
+                  const title = wineNames[0] || item.farmName || "Wine memory";
                   return (
                 <button
                   className="journal-card featured journal-card-button"
@@ -1486,15 +1485,19 @@ export default function WineDashboard() {
                 >
                   {(item.photoPath || item.wines?.[0]?.photoPath) && <ExperiencePhotoPreview path={item.photoPath || item.wines?.[0]?.photoPath} alt={`Photo from ${item.farmName}`} />}
                   <div className="card-copy">
-                    <p className="eyebrow">{item.experienceType === "at_home" ? "PERSONAL JOURNAL" : `${item.farmName.toUpperCase()} · ${item.town.toUpperCase()}`}</p>
                     <h2>{title}</h2>
-                    <p className="muted">
-                      {item.wineCount} {item.wineCount === 1 ? "wine" : "wines"} <span className="wine-stars" aria-label={`${item.rating} out of 5 stars`}>{"★".repeat(item.rating)}</span>
-                    </p>
-                    <p className="journal-card-date">{date}</p>
-                    {wineNames.length > 0 && <p className="journal-card-wines">{wineNames.slice(0, 2).join(" · ")}{wineNames.length > 2 ? ` · +${wineNames.length - 2} more` : ""}</p>}
+                    <p className="journal-card-context">{item.experienceType === "at_home" ? "At home" : `${item.farmName} · ${item.town}`} · {date}</p>
+                    <div className="journal-card-bottles">
+                      {savedWines.map((wine) => (
+                        <div className="journal-card-bottle" key={wine.id}>
+                          {savedWines.length > 1 && <strong>{wine.name}</strong>}
+                          <span>{[wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ") || "Wine details to add"}</span>
+                          {wine.rating ? <span className="wine-stars" aria-label={`${wine.rating} out of 5 stars`}>{"★".repeat(wine.rating)}</span> : wine.reaction ? <span className="reaction-chip loved">{reactionLabel(wine.reaction)}</span> : <span>Not yet rated</span>}
+                          {(wine.note || wine.detail) && <p>{wine.note || wine.detail}</p>}
+                        </div>
+                      ))}
+                    </div>
                     {item.note && item.note !== title && <p className="journal-card-note">{item.note}</p>}
-                    {(item.wines ?? []).some((wine) => wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[...new Set((item.wines ?? []).map((wine) => [wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")).filter(Boolean))].join(" / ")}</p>}
                     <span className="text-button card-open-button">
                       View full memory <Icon name="arrow" />
                     </span>
@@ -1793,15 +1796,14 @@ export default function WineDashboard() {
             onClick={(event) => event.stopPropagation()}
           >
             <button className="sheet-handle sheet-close-handle" type="button" aria-label="Close experience details" onClick={() => setSelectedExperience(undefined)}><span /></button>
-            <p className="eyebrow">{selectedExperience.experienceType === "at_home" ? "PERSONAL JOURNAL" : `${selectedExperience.farmName.toUpperCase()} · ${selectedExperience.town.toUpperCase()}`}</p>
-            <h2 id="experience-detail-title">{selectedExperience.experienceType === "at_home" ? selectedExperience.wines?.[0]?.name || "A bottle worth keeping" : selectedExperience.farmName}</h2>
-            <p className="muted">{new Date(selectedExperience.startedAt).toLocaleDateString("en-ZA")} · <span className="wine-stars" aria-label={`${selectedExperience.rating} out of 5 stars`}>{"★".repeat(selectedExperience.rating)}</span> · {selectedExperience.town}</p>
+            <h2 id="experience-detail-title">{selectedExperience.wines?.[0]?.name || selectedExperience.farmName || "Wine memory"}</h2>
+            <p className="experience-context">{selectedExperience.experienceType === "at_home" ? "At home" : `${selectedExperience.farmName} · ${selectedExperience.town}`} · {new Date(selectedExperience.startedAt).toLocaleDateString("en-ZA")} {selectedExperience.rating ? <><span aria-hidden="true">·</span> <span className="wine-stars" aria-label={`${selectedExperience.rating} out of 5 stars`}>{"★".repeat(selectedExperience.rating)}</span></> : null}</p>
             {selectedExperience.experienceType !== "at_home" && <a className="detail-map-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedExperience.farmName}, ${selectedExperience.town}`)}`} target="_blank" rel="noreferrer">Open farm in Maps <Icon name="arrow" /></a>}
             {selectedExperiencePhotoUrl && <img className="experience-photo" src={selectedExperiencePhotoUrl} alt={`Photo from ${selectedExperience.farmName}`} />}
             {selectedExperience.note && <p className="experience-detail-note">{selectedExperience.note}</p>}
-            <p className="detail-section-title">{selectedExperience.wineCount === 1 ? "BOTTLE SAVED" : "BOTTLES SAVED"}</p>
             {selectedExperience.wines?.map((wine) => (
               <div className="experience-wine" key={wine.id}>
+                {wine.photoPath && <ExperiencePhotoPreview path={wine.photoPath} alt={`Label photo for ${wine.name}`} />}
                 {editingWineId === wine.id ? (
                   <input
                     className="name-input"
@@ -1810,8 +1812,12 @@ export default function WineDashboard() {
                     aria-label="Correct wine name"
                   />
                 ) : <strong>{wine.name}</strong>}
-                {wine.rating ? <span className="reaction-chip loved">{"★".repeat(wine.rating)}</span> : <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{reactionLabel(wine.reaction)}</span>}
+                {wine.rating ? <span className="reaction-chip loved">{"★".repeat(wine.rating)} / 5</span> : wine.reaction ? <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{reactionLabel(wine.reaction)}</span> : <span className="muted">Not yet rated</span>}
                 {(wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")}</p>}
+                {wine.detail && <p className="detail-copy">{wine.detail}</p>}
+                {wine.note && <p className="personal-note">“{wine.note}”</p>}
+                {wine.summary && <p className="detail-copy">{wine.summary}</p>}
+                {wine.suggestedIdentity && <p className="detail-copy">{[wine.suggestedIdentity.producer, wine.suggestedIdentity.varietal, wine.suggestedIdentity.vintage, wine.suggestedIdentity.region].filter(Boolean).join(" · ")}</p>}
                 <button className="text-button" onClick={() => { setSelectedWine(wine); setSelectedWineExperienceId(selectedExperience.id); }}>Open wine</button>
                 {editingWineId === wine.id ? (
                   <button className="text-button" onClick={saveWineName}>Save name</button>
@@ -1823,7 +1829,6 @@ export default function WineDashboard() {
                 {wine.reflections?.map((reflection) => (
                   <p className="muted" key={reflection.id}>At home{reflection.reaction ? ` · ${reflection.reaction}` : ""}: {reflection.note}</p>
                 ))}
-                {wine.note && <p className="personal-note">“{wine.note}”</p>}
                 <button className="text-button" onClick={() => { setReflectionWineId(wine.id); setReflectionReaction(undefined); }}>
                   Add a second thought <Icon name="arrow" />
                 </button>
@@ -1831,7 +1836,6 @@ export default function WineDashboard() {
             ))}
             {reflectionWineId && (
               <div className="reflection-form">
-                <p className="eyebrow">SECOND THOUGHT</p>
                 <textarea
                   className="farm-note"
                   value={reflectionText}
@@ -1856,7 +1860,7 @@ export default function WineDashboard() {
               </div>
             ) : (
               <div className="detail-footer-actions">
-                <button className="danger-button" onClick={() => setConfirmDeleteId(selectedExperience.id)}>Delete experience</button>
+                <button className="danger-button" onClick={() => setConfirmDeleteId(selectedExperience.id)}>Delete</button>
                 <button className="primary-button sheet-done-button" onClick={() => setSelectedExperience(undefined)}>Done</button>
               </div>
             )}
