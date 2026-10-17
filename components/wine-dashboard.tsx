@@ -573,12 +573,16 @@ function CaptureSheet({
         <button className="primary-button" disabled={!reaction} onClick={save}>
           Keep this pour <Icon name="arrow" />
         </button>
-        <p className="saved-note">
-          <span className="sync-dot" /> Kept on this device. We’ll fill in the details quietly.
-        </p>
-        <p className="retention-note">
-          {retainAudio ? "Original recordings will be kept in your journal." : "Original recordings are queued for processing and may be removed after a successful result."}
-        </p>
+        {(audioCaptured || photoCaptured) && (
+          <>
+            <p className="saved-note">
+              <span className="sync-dot" /> Your private media will help organise this wine.
+            </p>
+            <p className="retention-note">
+              {retainAudio ? "Your original recording will stay in your journal." : "Original recordings may be removed after processing. You can keep them in Me."}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
