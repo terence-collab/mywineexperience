@@ -1471,7 +1471,12 @@ export default function WineDashboard() {
             {journalGroups.length ? (
               journalGroups.map(([month, items]) => <div key={month} className="journal-month-group">
                 <p className="month-label">{new Intl.DateTimeFormat("en-ZA", { month: "long", year: "numeric" }).format(new Date(`${month}-01T00:00:00`))}</p>
-                {items.map((item) => (
+                {items.map((item) => {
+                  const savedWines = item.wines ?? [];
+                  const wineNames = savedWines.map((wine) => wine.name).filter((name) => name && name !== "Wine experience");
+                  const date = new Date(item.startedAt).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
+                  const title = item.experienceType === "at_home" ? wineNames[0] || "A bottle worth keeping" : item.farmName || "Wine experience";
+                  return (
                 <button
                   className="journal-card featured journal-card-button"
                   key={item.id}
@@ -1479,18 +1484,22 @@ export default function WineDashboard() {
                 >
                   {(item.photoPath || item.wines?.[0]?.photoPath) && <ExperiencePhotoPreview path={item.photoPath || item.wines?.[0]?.photoPath} alt={`Photo from ${item.farmName}`} />}
                   <div className="card-copy">
-                    {item.experienceType !== "at_home" && <p className="eyebrow">{item.farmName.toUpperCase()} - {item.town.toUpperCase()}</p>}
-                    <h2>{item.experienceType === "at_home" ? item.wines?.[0]?.name || item.note || "Wine experience" : item.note || item.wines?.[0]?.name || "Wine experience"}</h2>
+                    <p className="eyebrow">{item.experienceType === "at_home" ? "PERSONAL JOURNAL" : `${item.farmName.toUpperCase()} · ${item.town.toUpperCase()}`}</p>
+                    <h2>{title}</h2>
                     <p className="muted">
                       {item.wineCount} {item.wineCount === 1 ? "wine" : "wines"} <span className="wine-stars" aria-label={`${item.rating} out of 5 stars`}>{"★".repeat(item.rating)}</span>
                     </p>
+                    <p className="journal-card-date">{date}</p>
+                    {wineNames.length > 0 && <p className="journal-card-wines">{wineNames.slice(0, 2).join(" · ")}{wineNames.length > 2 ? ` · +${wineNames.length - 2} more` : ""}</p>}
+                    {item.note && item.note !== title && <p className="journal-card-note">{item.note}</p>}
                     {(item.wines ?? []).some((wine) => wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[...new Set((item.wines ?? []).map((wine) => [wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")).filter(Boolean))].join(" / ")}</p>}
                     <span className="text-button card-open-button">
-                      Open experience <Icon name="arrow" />
+                      View full memory <Icon name="arrow" />
                     </span>
                   </div>
                 </button>
-                ))}
+                  );
+                })}
               </div>)
             ) : experiences.length ? (
               <div className="empty-state"><h2>No matching memories.</h2><p className="muted">Try another farm, town, or note.</p></div>
@@ -1564,7 +1573,7 @@ export default function WineDashboard() {
             <div className="account-status">
               <div>
                 <strong>{auth?.currentUser?.email ?? "Your private journal"}</strong>
-                <p>Your journal is syncing securely.</p>
+                <p>{firebaseEnabled && auth?.currentUser ? "Your journal is syncing securely." : firebaseEnabled ? "Sign in to keep this journal synced." : "Cloud sync is not configured in this version of the app."}</p>
               </div>
               <button className="text-button" onClick={() => void signOutUser()}>
                 Sign out
@@ -1782,11 +1791,13 @@ export default function WineDashboard() {
             onClick={(event) => event.stopPropagation()}
           >
             <button className="sheet-handle sheet-close-handle" type="button" aria-label="Close experience details" onClick={() => setSelectedExperience(undefined)}><span /></button>
-            {selectedExperience.experienceType !== "at_home" && <p className="eyebrow">{selectedExperience.farmName.toUpperCase()}</p>}
-            <h2 id="experience-detail-title">{selectedExperience.wines?.[0]?.name || selectedExperience.note || "Wine experience"}</h2>
+            <p className="eyebrow">{selectedExperience.experienceType === "at_home" ? "PERSONAL JOURNAL" : `${selectedExperience.farmName.toUpperCase()} · ${selectedExperience.town.toUpperCase()}`}</p>
+            <h2 id="experience-detail-title">{selectedExperience.experienceType === "at_home" ? selectedExperience.wines?.[0]?.name || "A bottle worth keeping" : selectedExperience.farmName}</h2>
             <p className="muted">{new Date(selectedExperience.startedAt).toLocaleDateString("en-ZA")} · <span className="wine-stars" aria-label={`${selectedExperience.rating} out of 5 stars`}>{"★".repeat(selectedExperience.rating)}</span> · {selectedExperience.town}</p>
             {selectedExperience.experienceType !== "at_home" && <a className="detail-map-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedExperience.farmName}, ${selectedExperience.town}`)}`} target="_blank" rel="noreferrer">Open farm in Maps <Icon name="arrow" /></a>}
             {selectedExperiencePhotoUrl && <img className="experience-photo" src={selectedExperiencePhotoUrl} alt={`Photo from ${selectedExperience.farmName}`} />}
+            {selectedExperience.note && <p className="experience-detail-note">{selectedExperience.note}</p>}
+            <p className="detail-section-title">{selectedExperience.wineCount === 1 ? "BOTTLE SAVED" : "BOTTLES SAVED"}</p>
             {selectedExperience.wines?.map((wine) => (
               <div className="experience-wine" key={wine.id}>
                 {editingWineId === wine.id ? (
