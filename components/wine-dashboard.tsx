@@ -93,7 +93,10 @@ type ExperienceSummary = {
   experienceType?: "farm_tasting" | "at_home";
 };
 type Reflection = { id: string; note: string; createdAt: string; type: "at_home" | "general"; reaction?: Reaction };
-// Journal detail copy: Add an at-home reflection after the tasting.
+
+function reactionLabel(reaction?: Reaction) {
+  return reaction === "Loved it" ? "Would pour again" : reaction === "Liked it" ? "Glad I tried it" : reaction ?? "";
+}
 
 function wineVarietal(wine: Wine) {
   return wine.varietal?.trim() || wine.suggestedIdentity?.varietal?.trim() || "";
@@ -451,10 +454,10 @@ function CaptureSheet({
         <div className="capture-header">
           <div>
             <p className="eyebrow">
-              WINE {draft?.id ?? wines.length + 1} - READY WHEN YOU ARE
+              POUR {draft?.id ?? wines.length + 1} · READY WHEN YOU ARE
             </p>
             <h2 id="capture-sheet-title">
-              Keep the <em>moment.</em>
+              What would you like to <em>remember?</em>
             </h2>
           </div>
           <button className="close-button" aria-label="Save draft and close capture" onClick={saveDraft}>
@@ -476,14 +479,14 @@ function CaptureSheet({
                   ? "Stop recording"
                   : audioCaptured
                     ? "Voice note saved"
-                    : "Record the host"}
+                    : "Keep a voice note"}
               </strong>
               <small>
                 {recording
                   ? `Recording - ${Math.floor(recordingSeconds / 60)}:${String(recordingSeconds % 60).padStart(2, "0")}`
                   : audioCaptured
-                    ? "Saved. Organising in the background"
-                    : "Save their description"}
+                    ? "Kept. We’re filling in the details."
+                    : "A few words, in your own voice"}
               </small>
             </span>
             <span className="action-arrow">{recording ? "O" : "->"}</span>
@@ -506,7 +509,7 @@ function CaptureSheet({
                   {photo || photoCaptured ? "Keep label photo" : "Photograph the bottle"}
               </strong>
               <small>
-                  {photo || photoCaptured ? "Retake if needed, then save wine" : "Label or tasting menu"}
+                  {photo || photoCaptured ? "Retake if needed, then keep this pour" : "A label, table, or small detail"}
               </small>
             </span>
             <span className="action-arrow">-&gt;</span>
@@ -543,7 +546,7 @@ function CaptureSheet({
           </label>
         </div>
         {captureMessage && <p className="form-message" role="status">{captureMessage}</p>}
-        <p className="reaction-label">How did it feel?</p>
+        <p className="reaction-label">How did it land?</p>
         <div className="reaction-grid">
           {(["Loved it", "Liked it", "Not for me"] as Reaction[]).map(
             (item) => (
@@ -552,21 +555,20 @@ function CaptureSheet({
                 className={reaction === item ? "chosen" : ""}
                 onClick={() => setReaction(item)}
               >
-                {item}
+                {reactionLabel(item)}
               </button>
             ),
           )}
         </div>
         <button className="text-button wine-note-toggle" type="button" onClick={() => setNoteOpen((value) => !value)}>
-          {noteOpen ? "Hide personal note" : "Add a note"}
+          {noteOpen ? "Hide your note" : "Add what stayed with you"}
         </button>
-        {noteOpen && <textarea className="wine-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="What made you feel that way?" maxLength={2000} />}
+        {noteOpen && <textarea className="wine-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="What made it stay with you?" maxLength={2000} />}
         <button className="primary-button" disabled={!reaction} onClick={save}>
-          Save and next <Icon name="arrow" />
+          Keep this pour <Icon name="arrow" />
         </button>
         <p className="saved-note">
-          <span className="sync-dot" /> Saved on this device - we will organise
-          this in the background
+          <span className="sync-dot" /> Kept on this device. We’ll fill in the details quietly.
         </p>
         <p className="retention-note">
           {retainAudio ? "Original recordings will be kept in your journal." : "Original recordings are queued for processing and may be removed after a successful result."}
@@ -600,8 +602,8 @@ function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (valu
         <div className="sheet-handle" />
         <div className="capture-header">
           <div>
-            <p className="eyebrow">QUICK ADD</p>
-            <h2 id="quick-add-title">A wine for <em>later.</em></h2>
+            <p className="eyebrow">KEEP A BOTTLE</p>
+            <h2 id="quick-add-title">A bottle for <em>later.</em></h2>
           </div>
           <button className="close-button" aria-label="Close quick add" onClick={onClose}>×</button>
         </div>
@@ -632,12 +634,12 @@ function QuickAddSheet({ onClose, onSave }: { onClose: () => void; onSave: (valu
         </label>
         {varietal === "Other" && <label className="name-input"><span>CUSTOM VARIETY</span><input value={customVarietal} onChange={(event) => setCustomVarietal(event.target.value)} placeholder="Enter a grape variety" /></label>}
         <div className="quick-add-rating">
-          <p className="reaction-label">Your rating</p>
+          <p className="reaction-label">How did it land? <small>Optional</small></p>
           <div className="star-row" aria-label="Rate wine out of 5 stars">
             {[1, 2, 3, 4, 5].map((value) => <button key={value} className={rating >= value ? "star active" : "star"} aria-label={`${value} out of 5 stars`} onClick={() => setRating(value)}>★</button>)}
           </div>
         </div>
-        <button className="primary-button" disabled={!name.trim() || !wineType || !rating || (varietal === "Other" && !customVarietal.trim())} onClick={() => wineType && onSave({ name: name.trim(), wineType, varietal: selectedVarietal || undefined, rating, photo })}>Save wine <Icon name="arrow" /></button>
+        <button className="primary-button" disabled={!name.trim() || !wineType || !rating || (varietal === "Other" && !customVarietal.trim())} onClick={() => wineType && onSave({ name: name.trim(), wineType, varietal: selectedVarietal || undefined, rating, photo })}>Keep this bottle <Icon name="arrow" /></button>
       </div>
     </div>
   );
@@ -1343,8 +1345,8 @@ export default function WineDashboard() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand-mark">
-          <span>My Wine</span>
-          <span>Experience</span>
+          <span>Kept</span>
+          <span>Wine memories, kept close</span>
         </div>
         <div className="topbar-right">
             <span className="sync-dot" /> <span>{mediaQueue.unassigned ? `${mediaQueue.unassigned} media ready to attach` : mediaQueue.failed ? `${mediaQueue.failed} media needs retry` : mediaQueue.waiting ? `${mediaQueue.waiting} media waiting to upload` : isOnline ? "Ready to sync" : "Offline - saved on this device"}</span>
@@ -1366,7 +1368,7 @@ export default function WineDashboard() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search farms or towns"
+                    placeholder="Search places or towns"
                   />
                 </div>
                 <button
@@ -1374,7 +1376,7 @@ export default function WineDashboard() {
                   aria-label="Change map filter"
                   onClick={() => setFarmFilter((current) => current === "all" ? "visited" : current === "visited" ? "favourites" : "all")}
                 >
-                  {farmFilter === "all" ? "All" : farmFilter === "visited" ? "Visited" : "Favourites"}
+                  {farmFilter === "all" ? "All places" : farmFilter === "visited" ? "Kept places" : "Worth revisiting"}
                 </button>
               </div>
               {searchResults.length > 0 && (
@@ -1407,15 +1409,15 @@ export default function WineDashboard() {
               <div className="farm-preview">
                 <div>
                   <p className="eyebrow">
-                    {selectedFarm.visited || selectedFarmHistory?.visited ? "VISITED" : "NOT YET VISITED"}
+                  {selectedFarm.visited || selectedFarmHistory?.visited ? "A PLACE YOU’VE KEPT" : "A PLACE TO REMEMBER"}
                   </p>
                   <h2>{selectedFarm.name}</h2>
                   <p className="muted">
                     {selectedFarm.town} - {selectedFarm.note}{selectedFarmHistory?.visits ? ` - ${selectedFarmHistory.visits} visit${selectedFarmHistory.visits === 1 ? "" : "s"}` : ""}
                   </p>
-                  {selectedFarmLatestRating ? <p className="farm-history-detail">Latest farm feeling: {"*".repeat(selectedFarmLatestRating)}</p> : null}
-                  {selectedFarmLovedWines.length ? <p className="farm-history-detail">Loved it: {selectedFarmLovedWines.join(", ")}</p> : null}
-                  {selectedFarmHistory?.visited && <button className="text-button" onClick={() => { setJournalSearch(selectedFarm.name); setTab("journal"); }}>Open history <Icon name="arrow" /></button>}
+                  {selectedFarmLatestRating ? <p className="farm-history-detail">Latest feeling: {"*".repeat(selectedFarmLatestRating)}</p> : null}
+                  {selectedFarmLovedWines.length ? <p className="farm-history-detail">Worth revisiting: {selectedFarmLovedWines.join(", ")}</p> : null}
+                  {selectedFarmHistory?.visited && <button className="text-button" onClick={() => { setJournalSearch(selectedFarm.name); setTab("journal"); }}>Open memories <Icon name="arrow" /></button>}
                 </div>
                 <button
                   className="round-arrow"
@@ -1433,7 +1435,7 @@ export default function WineDashboard() {
             <div className="search-control-row">
               <div className="search-field journal-search">
                 <Icon name="search" />
-                <input value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Search farms or memories" />
+                <input value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Search places, bottles, or memories" />
               </div>
               <button className="filter-toggle" type="button" aria-expanded={journalFiltersOpen} onClick={() => setJournalFiltersOpen((value) => !value)}>
                 Filters <span aria-hidden="true">{journalFiltersOpen ? "−" : "+"}</span>
@@ -1506,9 +1508,9 @@ export default function WineDashboard() {
             ) : (
               <div className="empty-state">
                 <p className="eyebrow">YOUR FIRST MEMORY</p>
-                <h2>Start with a place you have loved.</h2>
-                <p className="muted">Your experiences, wines, reactions, and reflections will appear here in date order.</p>
-                <button className="primary-button" onClick={() => setFullTastingOpen(true)}>Start experience <Icon name="arrow" /></button>
+                <h2>Start with a bottle or place you want to keep.</h2>
+                <p className="muted">Your places, bottles, and small details will stay here for whenever you want to return.</p>
+                <button className="primary-button" onClick={() => setFullTastingOpen(true)}>Keep a tasting <Icon name="arrow" /></button>
               </div>
             )}
           </div>
@@ -1647,18 +1649,18 @@ export default function WineDashboard() {
         <div className="bottom-nav-items">
           {(
             [
-              ["map", "map", "Map"],
+              ["map", "map", "Places"],
               ["journal", "book", "Journal"],
-              ["start", "plus", "Start"],
-              ["favourites", "heart", "My Wines"],
-              ["profile", "user", "Profile"],
+              ["start", "plus", "Keep"],
+              ["favourites", "heart", "Wines"],
+              ["profile", "user", "Me"],
             ] as [Tab | "start", string, string][]
           ).map(([key, icon, label]) => (
             <button
               key={key}
               className={key === "start" ? "nav-action" : tab === key ? "selected" : ""}
               aria-current={key !== "start" && tab === key ? "page" : undefined}
-              aria-label={key === "start" ? "Start a new wine experience" : label}
+              aria-label={key === "start" ? "Keep a wine or tasting" : label}
               onClick={() => key === "start" ? setStartChooserOpen(true) : setTab(key)}
             >
               <Icon name={icon} />
@@ -1671,9 +1673,9 @@ export default function WineDashboard() {
         <div className="modal-backdrop" onClick={() => setStartChooserOpen(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
-            <h2 id="start-sheet-title">What are you saving <em>today?</em></h2>
-            <button className="primary-button chooser-button" onClick={() => { setStartChooserOpen(false); setQuickAddOpen(true); }}>Quick Add wine <Icon name="arrow" /></button>
-            <button className="text-button chooser-secondary" onClick={() => { setStartChooserOpen(false); setFullTastingOpen(true); }}>Start full tasting <Icon name="arrow" /></button>
+            <h2 id="start-sheet-title">What would you like to <em>keep?</em></h2>
+            <button className="primary-button chooser-button" onClick={() => { setStartChooserOpen(false); setQuickAddOpen(true); }}>Keep a bottle <Icon name="arrow" /></button>
+            <button className="text-button chooser-secondary" onClick={() => { setStartChooserOpen(false); setFullTastingOpen(true); }}>Start a tasting <Icon name="arrow" /></button>
           </div>
         </div>
       )}
@@ -1681,8 +1683,8 @@ export default function WineDashboard() {
         <div className="modal-backdrop" onClick={() => setFullTastingOpen(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
-            <p className="eyebrow">NEW EXPERIENCE</p>
-            <h2 id="start-sheet-title">Where are you tasting <em>today?</em></h2>
+            <p className="eyebrow">KEEP A TASTING</p>
+            <h2 id="start-sheet-title">Where are you <em>today?</em></h2>
             <div className="selected-farm">
               <div className="farm-icon">F</div>
               <div>
@@ -1699,9 +1701,9 @@ export default function WineDashboard() {
                 onChange={(event) => setStartDateTime(event.target.value)}
               />
             </label>
-            <p className="reassurance">You can add the details as you go.</p>
+            <p className="reassurance">Keep the feeling first. Details can come later.</p>
             <button className="primary-button" onClick={begin}>
-              Start tasting <Icon name="arrow" />
+              Begin keeping <Icon name="arrow" />
             </button>
           </div>
         </div>
@@ -1723,16 +1725,16 @@ export default function WineDashboard() {
         <div className="modal-backdrop" onClick={() => setEndOpen(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="end-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
-            <p className="eyebrow">WRAP UP</p>
+            <p className="eyebrow">KEEP THE DAY</p>
             <h2 id="end-sheet-title">
-              How was the <em>whole day?</em>
+              What would you <em>keep?</em>
             </h2>
             <div className="end-summary" aria-label="Experience summary">
-              <div><strong>{wines.length}</strong><span>wines captured</span></div>
-              <div><strong>{wines.filter((wine) => wine.reaction === "Loved it").length}</strong><span>Loved it</span></div>
-              <div><strong>{wines.filter((wine) => wine.status === "Waiting to upload" || wine.status === "Processing").length}</strong><span>organising</span></div>
+              <div><strong>{wines.length}</strong><span>bottles kept</span></div>
+              <div><strong>{wines.filter((wine) => wine.reaction === "Loved it").length}</strong><span>pour again</span></div>
+              <div><strong>{wines.filter((wine) => wine.status === "Waiting to upload" || wine.status === "Processing").length}</strong><span>filling in details</span></div>
             </div>
-            <p className="muted">Your tasting is saved before background organisation finishes.</p>
+            <p className="muted">Your memory is kept before any background details are filled in.</p>
             <div className="star-row">
               {[1, 2, 3, 4, 5].map((value) => (
                   <button
@@ -1749,7 +1751,7 @@ export default function WineDashboard() {
               className="farm-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="A note for your future self"
+              placeholder="What made it stay with you?"
             />
             {wines.some((wine) => wine.status === "Draft") && <p className="muted">You have {wines.filter((wine) => wine.status === "Draft").length} unfinished draft{wines.filter((wine) => wine.status === "Draft").length === 1 ? "" : "s"}. They will stay saved on this device.</p>}
             <button
@@ -1757,7 +1759,7 @@ export default function WineDashboard() {
               disabled={!rating}
               onClick={finish}
             >
-              Save experience <Icon name="arrow" />
+              Keep for later <Icon name="arrow" />
             </button>
           </div>
         </div>
@@ -1766,13 +1768,13 @@ export default function WineDashboard() {
         <div className="modal-backdrop" onClick={() => setSavedExperience(undefined)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="saved-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
-            <p className="eyebrow">EXPERIENCE SAVED</p>
-            <h2 id="saved-sheet-title">Wine saved.</h2>
-            <p className="muted">{savedExperience.wineCount} wines saved at {savedExperience.farmName}. Any queued photos, voice notes, and enrichment will organise in the background.</p>
+            <p className="eyebrow">KEPT FOR LATER</p>
+            <h2 id="saved-sheet-title">Your memory is <em>kept.</em></h2>
+            <p className="muted">{savedExperience.wineCount} {savedExperience.wineCount === 1 ? "bottle" : "bottles"} kept at {savedExperience.farmName}. Any photo or voice note will quietly fill in the details.</p>
             <div className="receipt-actions">
-              <button className="primary-button" onClick={() => { setSelectedExperience(savedExperience); setSavedExperience(undefined); }}>View experience <Icon name="arrow" /></button>
+              <button className="primary-button" onClick={() => { setSelectedExperience(savedExperience); setSavedExperience(undefined); }}>View memory <Icon name="arrow" /></button>
               <input ref={experiencePhotoInput} className="visually-hidden" type="file" accept="image/*" capture="environment" onChange={addExperiencePhoto} />
-              <button className="text-button" onClick={() => experiencePhotoInput.current?.click()}>{savedExperience.photo ? "Experience photo queued" : "Add a farm photo"} <Icon name="camera" /></button>
+              <button className="text-button" onClick={() => experiencePhotoInput.current?.click()}>{savedExperience.photo ? "Photo ready to keep" : "Add a place photo"} <Icon name="camera" /></button>
               <button className="text-button" onClick={() => setSavedExperience(undefined)}>Done</button>
             </div>
           </div>
@@ -1808,7 +1810,7 @@ export default function WineDashboard() {
                     aria-label="Correct wine name"
                   />
                 ) : <strong>{wine.name}</strong>}
-                {wine.rating ? <span className="reaction-chip loved">{"★".repeat(wine.rating)}</span> : <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{wine.reaction}</span>}
+                {wine.rating ? <span className="reaction-chip loved">{"★".repeat(wine.rating)}</span> : <span className={`reaction-chip ${wine.reaction === "Loved it" ? "loved" : "neutral"}`}>{reactionLabel(wine.reaction)}</span>}
                 {(wine.wineType || wineVarietal(wine)) && <p className="wine-category-line">{[wineTypeLabel(wine.wineType), wineVarietal(wine)].filter(Boolean).join(" · ")}</p>}
                 <button className="text-button" onClick={() => { setSelectedWine(wine); setSelectedWineExperienceId(selectedExperience.id); }}>Open wine</button>
                 {editingWineId === wine.id ? (
@@ -1823,25 +1825,25 @@ export default function WineDashboard() {
                 ))}
                 {wine.note && <p className="personal-note">“{wine.note}”</p>}
                 <button className="text-button" onClick={() => { setReflectionWineId(wine.id); setReflectionReaction(undefined); }}>
-                  Add reflection <Icon name="arrow" />
+                  Add a second thought <Icon name="arrow" />
                 </button>
               </div>
             ))}
             {reflectionWineId && (
               <div className="reflection-form">
-                <p className="eyebrow">REFLECTION</p>
+                <p className="eyebrow">SECOND THOUGHT</p>
                 <textarea
                   className="farm-note"
                   value={reflectionText}
                   onChange={(event) => setReflectionText(event.target.value)}
-                  placeholder="What did you notice when you opened it at home?"
+                  placeholder="What stayed with you when you came back to it?"
                 />
-                <p className="reaction-label">Update your feeling? (optional)</p>
+                <p className="reaction-label">How does it land now? <small>Optional</small></p>
                 <div className="reaction-grid">
-                  {(["Loved it", "Liked it", "Not for me"] as Reaction[]).map((item) => <button key={item} className={reflectionReaction === item ? "chosen" : ""} onClick={() => setReflectionReaction(item)}>{item}</button>)}
+                  {(["Loved it", "Liked it", "Not for me"] as Reaction[]).map((item) => <button key={item} className={reflectionReaction === item ? "chosen" : ""} onClick={() => setReflectionReaction(item)}>{reactionLabel(item)}</button>)}
                 </div>
                 <button className="primary-button" disabled={!reflectionText.trim()} onClick={saveReflection}>
-                  Save reflection <Icon name="arrow" />
+                  Keep this thought <Icon name="arrow" />
                 </button>
               </div>
             )}
@@ -1865,7 +1867,7 @@ export default function WineDashboard() {
         <div className="modal-backdrop" onClick={() => setSelectedWine(undefined)}>
           <div className="sheet wine-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="wine-detail-title" onClick={(event) => event.stopPropagation()}>
             <button className="sheet-handle sheet-close-handle" type="button" aria-label="Close wine details" onClick={() => setSelectedWine(undefined)}><span /></button>
-            <p className="eyebrow">WINE DETAIL</p>
+            <p className="eyebrow">BOTTLE MEMORY</p>
             <h2 id="wine-detail-title">{selectedWine.name}</h2>
             {selectedWine.rating ? <span className="reaction-chip loved">{"★".repeat(selectedWine.rating)} / 5</span> : selectedWine.reaction ? <span className="reaction-chip loved">{selectedWine.reaction}</span> : null}
             {(selectedWine.wineType || wineVarietal(selectedWine)) && <p className="wine-category-line">{[wineTypeLabel(selectedWine.wineType), wineVarietal(selectedWine)].filter(Boolean).join(" · ")}</p>}
@@ -1875,7 +1877,7 @@ export default function WineDashboard() {
             {selectedWine.transcript && <div className="detail-section"><p className="eyebrow">TRANSCRIPT</p><p className="detail-copy">{selectedWine.transcript}</p></div>}
             {selectedWine.suggestedIdentity && (
               <div className="detail-section">
-                <p className="eyebrow">SUGGESTED DETAILS</p>
+                <p className="eyebrow">DETAILS WE FOUND</p>
                 <p className="detail-copy">
                   {[selectedWine.suggestedIdentity.name, selectedWine.suggestedIdentity.producer, selectedWine.suggestedIdentity.varietal, selectedWine.suggestedIdentity.vintage, selectedWine.suggestedIdentity.region].filter(Boolean).join(" · ") || "No additional details yet."}
                 </p>
@@ -1894,7 +1896,7 @@ export default function WineDashboard() {
               </div>
             )}
             <div className="detail-section">
-              <p className="eyebrow">SOURCE MEMORY</p>
+              <p className="eyebrow">WHAT YOU CAPTURED</p>
               <p className="muted">{selectedWine.photoPath ? "Label photo available" : selectedWine.photo ? "Label photo saved" : "No label photo saved"} · {selectedWine.audioPath ? "Voice note available" : selectedWine.audio ? "Voice note queued" : "No voice note saved"}</p>
               <p className="muted">Status: {selectedWine.status}</p>
               {selectedWine.error && <>
@@ -1906,9 +1908,9 @@ export default function WineDashboard() {
               {selectedWineAudioUrl && <audio className="audio-player" controls preload="metadata" src={selectedWineAudioUrl} />}
             </div>
             {selectedWine.reflections?.map((reflection) => (
-              <div className="reflection" key={reflection.id}><small>REFLECTION{reflection.reaction ? ` · ${reflection.reaction}` : ""}</small><p>{reflection.note}</p></div>
+              <div className="reflection" key={reflection.id}><small>SECOND THOUGHT{reflection.reaction ? ` · ${reactionLabel(reflection.reaction)}` : ""}</small><p>{reflection.note}</p></div>
             ))}
-             <button className="primary-button" onClick={() => { setReflectionWineId(selectedWine.id); setReflectionReaction(undefined); setSelectedWine(undefined); }}>Add reflection <Icon name="arrow" /></button>
+             <button className="primary-button" onClick={() => { setReflectionWineId(selectedWine.id); setReflectionReaction(undefined); setSelectedWine(undefined); }}>Add a second thought <Icon name="arrow" /></button>
             <button className="primary-button sheet-done-button" onClick={() => setSelectedWine(undefined)}>Done</button>
           </div>
         </div>

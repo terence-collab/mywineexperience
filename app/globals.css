@@ -534,6 +534,7 @@ body::before {
   line-height: 1;
   text-transform: uppercase;
 }
+.brand-mark::before { content: ""; width: 22px; height: 12px; margin-bottom: 7px; border: 2px solid currentColor; border-left-color: transparent; border-radius: 50%; transform: rotate(-18deg); opacity: .78; }
 .topbar-right { color: #6e7a82; }
 .avatar,
 .large-avatar {
@@ -737,6 +738,13 @@ body::before {
 .landing-steps span { color: var(--wine); }
 .landing-footer { border-top-color: rgba(164, 184, 194, .46); color: #74818a; }
 .landing-footer a { color: var(--wine); }
+
+.pour-ripple-mark { width: 132px; height: 130px; position: relative; color: var(--wine); opacity: .82; }
+.pour-ripple-mark i { position: absolute; display: block; border: 1.5px solid currentColor; border-radius: 50%; transform: rotate(-22deg); }
+.pour-ripple-mark i:nth-child(1) { width: 92px; height: 46px; left: 16px; top: 28px; }
+.pour-ripple-mark i:nth-child(2) { width: 64px; height: 32px; left: 37px; top: 42px; }
+.pour-ripple-mark i:nth-child(3) { width: 116px; height: 64px; left: 0; top: 14px; border-left-color: transparent; }
+.pour-ripple-mark span { position: absolute; right: 0; bottom: 0; color: var(--gold); font-size: 8px; font-weight: 700; letter-spacing: .22em; }
 
 @media (max-width: 700px) {
   .topbar { height: 64px; }
@@ -942,6 +950,7 @@ body::before {
   .landing-lead { margin: 20px 0 24px; line-height: 1.55; }
   .landing-art-row { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 14px; }
   .landing-cta { width: 100%; min-height: 58px; gap: 16px; padding-inline: 22px; white-space: nowrap; }
-  .wine-bottle-art { width: 92px; flex-basis: 92px; }
+.wine-bottle-art { width: 92px; flex-basis: 92px; }
+  .pour-ripple-mark { width: 92px; height: 100px; transform: scale(.84); transform-origin: right bottom; }
   .landing-reassurance { margin-top: 14px; }
 }

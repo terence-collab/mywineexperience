@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "My Wine Experience",
-  description: "Enjoy the tasting now. Remember what mattered later.",
+  title: "Kept · Wine memories, kept close.",
+  description: "A private digital cellar for the bottles, places, and moments worth remembering.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

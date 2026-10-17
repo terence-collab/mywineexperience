@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "My Wine Experience",
-    short_name: "My Wine",
-    description: "Enjoy the tasting now. Remember what mattered later.",
+    name: "Kept · Wine memories, kept close.",
+    short_name: "Kept",
+    description: "A private digital cellar for the bottles, places, and moments worth remembering.",
     start_url: "/",
     display: "standalone",
     background_color: "#f4f1e9",
