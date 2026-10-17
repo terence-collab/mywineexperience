@@ -706,6 +706,7 @@ export default function WineDashboard() {
   const [keepAudio, setKeepAudio] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [mediaQueue, setMediaQueue] = useState({ waiting: 0, failed: 0, unassigned: 0 });
+  const [cloudSyncError, setCloudSyncError] = useState(false);
   const [authUserId, setAuthUserId] = useState("device");
   const syncedCloudAccounts = useRef(new Set<string>());
   const storageKey = `my-wine-experience:${authUserId}`;
@@ -950,7 +951,7 @@ export default function WineDashboard() {
           const cloudIds = new Set(cloudItems.map((item) => item.id));
           return [...cloudItems, ...current.filter((item) => !cloudIds.has(item.id))];
         });
-      }, () => undefined);
+      }, () => setCloudSyncError(true));
     } catch {
       // Local-first capture remains available if Firebase is temporarily unavailable.
     }
@@ -964,6 +965,7 @@ export default function WineDashboard() {
       await syncLocalExperiencesToCloud(authUserId, experiences);
       await uploadQueuedMedia(authUserId);
     })().catch(() => {
+      setCloudSyncError(true);
       syncedCloudAccounts.current.delete(authUserId);
     });
   }, [authUserId, experiences, hydrated]);
@@ -1071,7 +1073,7 @@ export default function WineDashboard() {
         startedAt: Date.parse(startedAt),
         status: "active",
         wineCount: 0,
-      }).catch(() => undefined);
+      }).then(() => setCloudSyncError(false)).catch(() => setCloudSyncError(true));
     }
     trackEvent("experience_started", { online: navigator.onLine });
   }
@@ -1108,7 +1110,10 @@ export default function WineDashboard() {
         photoPath: wine.photoPath,
         createdAt: Date.now(),
       }),
-    ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
+    ]).then(async () => {
+      setCloudSyncError(false);
+      await uploadQueuedMedia(uid);
+    }).catch(() => setCloudSyncError(true));
   }
   function saveWine(wine: Wine) {
     const nextWines = wines.some((item) => item.id === wine.id) ? wines.map((item) => item.id === wine.id ? wine : item) : [...wines, wine];
@@ -1158,7 +1163,10 @@ export default function WineDashboard() {
       void Promise.all([
         saveCloudExperience({ id: experienceId, userId: uid, farmId: "at-home", farmName: "At home", farmTown: "Personal journal", startedAt: Date.parse(startedAt), status: "completed", wineCount: 1, overallRating: value.rating, experienceType: "at_home" }),
         saveCloudWine({ id: String(wineId), userId: uid, experienceId, name: wine.name, detail: wine.detail, rating: wine.rating, wineType: wine.wineType, varietal: wine.varietal, captureMode: "quick_add", status: "ready", createdAt: Date.now() }),
-      ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
+      ]).then(async () => {
+        setCloudSyncError(false);
+        await uploadQueuedMedia(uid);
+      }).catch(() => setCloudSyncError(true));
     }
   }
   const updateWineDraft = useCallback((wine: Wine) => {
@@ -1226,7 +1234,10 @@ export default function WineDashboard() {
               captureMode: wine.captureMode,
               createdAt: Date.now(),
         })),
-      ]).then(() => uploadQueuedMedia(uid)).catch(() => undefined);
+      ]).then(async () => {
+        setCloudSyncError(false);
+        await uploadQueuedMedia(uid);
+      }).catch(() => setCloudSyncError(true));
   }
   function saveReflection() {
     if (!selectedExperience || !reflectionWineId || !reflectionText.trim()) return;
@@ -1378,7 +1389,7 @@ export default function WineDashboard() {
       const uid = auth?.currentUser?.uid;
       if (uid) return uploadQueuedMedia(uid);
       return undefined;
-    }).catch(() => undefined);
+    }).catch(() => setCloudSyncError(true));
   }
   async function removeExperience(summary: ExperienceSummary) {
     setDeleteError(undefined);
@@ -1403,7 +1414,7 @@ export default function WineDashboard() {
           <span>Wine memories, kept close</span>
         </div>
         <div className="topbar-right">
-            <span className="sync-dot" /> <span>{mediaQueue.unassigned ? `${mediaQueue.unassigned} media ready to attach` : mediaQueue.failed ? `${mediaQueue.failed} media needs retry` : mediaQueue.waiting ? `${mediaQueue.waiting} media waiting to upload` : isOnline ? "Ready to sync" : "Offline - saved on this device"}</span>
+            <span className="sync-dot" /> <span>{cloudSyncError ? "Saved on this device — cloud sync needs retry" : mediaQueue.unassigned ? `${mediaQueue.unassigned} media ready to attach` : mediaQueue.failed ? `${mediaQueue.failed} media needs retry` : mediaQueue.waiting ? `${mediaQueue.waiting} media waiting to upload` : isOnline ? "Ready to sync" : "Offline - saved on this device"}</span>
            <button className="avatar" aria-label="Open profile" onClick={() => setTab("profile")}>T</button>
         </div>
       </header>
@@ -1671,7 +1682,7 @@ export default function WineDashboard() {
               <p className="eyebrow">WINE LIST</p>
               <h2>{wines.length ? `${wines.length} of 7 wines` : "Wine 1 - ready when the first pour arrives"}</h2>
             </div>
-            <span className="sync-status">{mediaQueue.failed ? `${mediaQueue.failed} need retry` : mediaQueue.waiting ? `${mediaQueue.waiting} waiting` : isOnline ? "Ready to sync" : "Saved on this device"}</span>
+            <span className="sync-status">{cloudSyncError ? "Saved on this device — sync needs retry" : mediaQueue.failed ? `${mediaQueue.failed} need retry` : mediaQueue.waiting ? `${mediaQueue.waiting} waiting` : isOnline ? "Ready to sync" : "Saved on this device"}</span>
           </div>
           {wines.map((wine, index) => (
             <button className="active-wine-row" key={wine.id} onClick={() => { if (wine.status === "Draft") { setCaptureDraft(wine); setCaptureOpen(true); } }} disabled={wine.status !== "Draft"}>
