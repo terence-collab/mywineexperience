@@ -43,6 +43,19 @@ test("owners can create valid experiences and wines", async () => {
   const db = testEnv.authenticatedContext("user-a").firestore();
   await assertSucceeds(db.doc("users/user-a/experiences/experience-a").set(experience));
   await assertSucceeds(db.doc("users/user-a/experiences/experience-a/wines/wine-a").set(wine));
+  await assertSucceeds(db.doc("users/user-a/experiences/active-experience").set({
+    userId: "user-a",
+    farmId: "boschendal",
+    farmName: "Boschendal",
+    wineCount: 0,
+    status: "active",
+  }));
+  await assertSucceeds(db.doc("users/user-a/experiences/active-experience/wines/draft-wine").set({
+    ...wine,
+    experienceId: "active-experience",
+    status: "waiting_upload",
+    detail: "Voice note · label photo",
+  }));
 });
 
 test("users cannot read another user's journal", async () => {
