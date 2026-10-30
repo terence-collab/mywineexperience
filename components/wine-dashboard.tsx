@@ -94,6 +94,15 @@ type ExperienceSummary = {
 };
 type Reflection = { id: string; note: string; createdAt: string; type: "at_home" | "general"; reaction?: Reaction };
 
+const EMPTY_HOME_EXPERIENCE_GRACE_MS = 24 * 60 * 60 * 1000;
+
+function isStaleEmptyHomeExperience(experience: ExperienceSummary) {
+  return experience.experienceType === "at_home"
+    && Array.isArray(experience.wines)
+    && experience.wines.length === 0
+    && Date.parse(experience.startedAt) < Date.now() - EMPTY_HOME_EXPERIENCE_GRACE_MS;
+}
+
 function reactionLabel(reaction?: Reaction) {
   return reaction === "Loved it" ? "Would pour again" : reaction === "Liked it" ? "Glad I tried it" : reaction ?? "";
 }
@@ -197,7 +206,7 @@ function migrateDeviceJournalToAccount(userId: string) {
 }
 
 async function syncLocalExperiencesToCloud(userId: string, items: ExperienceSummary[]) {
-  await Promise.all(items.map(async (experience) => {
+  await Promise.all(items.filter((experience) => !isStaleEmptyHomeExperience(experience)).map(async (experience) => {
     await saveCloudExperience({
       id: experience.id,
       userId,
@@ -289,6 +298,7 @@ function CaptureSheet({
   onSave,
   onSaveDraft,
   onAutoSaveDraft,
+  onProcessDraft,
 }: {
   wines: Wine[];
   experienceId: string;
@@ -298,10 +308,12 @@ function CaptureSheet({
   onSave: (wine: Wine) => void;
   onSaveDraft: (wine: Wine) => void;
   onAutoSaveDraft: (wine: Wine) => void;
+  onProcessDraft: (wine: Wine) => Promise<void>;
 }) {
   const [reaction, setReaction] = useState<Reaction | undefined>(draft?.reaction);
   const [name, setName] = useState(draft?.name === "New wine" ? "" : draft?.name ?? "");
   const [note, setNote] = useState(draft?.note ?? "");
+  const [rating, setRating] = useState(draft?.rating ?? 0);
   const [wineType, setWineType] = useState<WineType | undefined>(draft?.wineType);
   const [varietal, setVarietal] = useState(draft?.varietal ?? "");
   const [noteOpen, setNoteOpen] = useState(Boolean(draft?.note));
@@ -320,6 +332,18 @@ function CaptureSheet({
   // new draft on every render.
   const [captureWineId] = useState(() => draft?.id ?? wines.length + 1);
   const [captureTone] = useState(() => draft?.tone ?? (wines.length % 2 ? "rose" : "gold"));
+  const currentWine = wines.find((wine) => wine.id === captureWineId);
+  const currentWineRef = useRef(currentWine);
+  useEffect(() => {
+    currentWineRef.current = currentWine;
+    if (!currentWine) return;
+    const enrichedName = currentWine.confirmedName || currentWine.suggestedIdentity?.name || currentWine.name;
+    if (enrichedName && enrichedName !== "New wine") setName(enrichedName);
+    if (currentWine.wineType) setWineType(currentWine.wineType);
+    if (wineVarietal(currentWine)) setVarietal(wineVarietal(currentWine));
+    if (currentWine.status === "ready") setCaptureMessage("Wine details found. Check them below, then keep this pour.");
+    else if (currentWine.status === "processing") setCaptureMessage("Listening for the wine details…");
+  }, [currentWine]);
   useEffect(() => {
     if (!recording) return;
     const startedAt = Date.now();
@@ -351,6 +375,22 @@ function CaptureSheet({
         setRecording(false);
         setRecordingSeconds(0);
         setAudioCaptured(true);
+        const capturedWine: Wine = {
+          id: captureWineId,
+          name: name.trim() || "New wine",
+          note: note.trim() || undefined,
+          rating: rating || undefined,
+          wineType,
+          varietal: varietal.trim() || undefined,
+          captureMode: "tasting",
+          detail: "Recorded wine details",
+          reaction,
+          status: "Waiting to upload",
+          tone: captureTone,
+          audio: true,
+          photo: photoCaptured,
+        };
+        setCaptureMessage("Listening for the wine details…");
         void enqueueMedia({
           id: crypto.randomUUID(),
           userId: auth?.currentUser?.uid,
@@ -361,6 +401,8 @@ function CaptureSheet({
           blob: new Blob(chunks.current, {
             type: next.mimeType || "audio/webm",
           }),
+        }).then(() => onProcessDraft(capturedWine)).catch(() => {
+          setCaptureMessage("The recording is saved. Add or confirm any details below.");
         });
       };
       next.start();
@@ -396,15 +438,17 @@ function CaptureSheet({
     if (!reaction) return;
     const wineId = captureWineId;
     onSave({
+      ...(currentWineRef.current ?? {}),
       id: wineId,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
+      rating: rating || undefined,
       wineType,
       varietal: varietal.trim() || undefined,
       captureMode: "tasting",
-       detail: `${audioCaptured ? "Voice note" : "Quick capture"}${photo || photoCaptured ? " - Label photo" : ""}`,
+      detail: `${audioCaptured ? "Recorded wine details" : "Quick capture"}${photo || photoCaptured ? " - Label photo" : ""}`,
       reaction,
-      status: "Waiting to upload",
+      status: currentWine?.status === "ready" ? "ready" : "Waiting to upload",
        tone: captureTone,
       audio: audioCaptured,
        photo: photoCaptured,
@@ -416,15 +460,17 @@ function CaptureSheet({
       return;
     }
     onSaveDraft({
+      ...(currentWine ?? {}),
       id: captureWineId,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
+      rating: rating || undefined,
       wineType,
       varietal: varietal.trim() || undefined,
       captureMode: "tasting",
-      detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
+      detail: `${audioCaptured ? "Recorded wine details" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
-      status: "Draft",
+      status: currentWine?.status === "ready" ? "ready" : "Draft",
       tone: captureTone,
       audio: audioCaptured,
       photo: photoCaptured,
@@ -433,20 +479,22 @@ function CaptureSheet({
   useEffect(() => {
     if (!name.trim() && !audioCaptured && !photoCaptured && !reaction) return;
     onAutoSaveDraft({
+      ...(currentWineRef.current ?? {}),
       id: captureWineId,
       name: name.trim() || "New wine",
       note: note.trim() || undefined,
+      rating: rating || undefined,
       wineType,
       varietal: varietal.trim() || undefined,
       captureMode: "tasting",
-      detail: `${audioCaptured ? "Voice note" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
+      detail: `${audioCaptured ? "Recorded wine details" : "Draft capture"}${photoCaptured ? " - Label photo" : ""}`,
       reaction,
-      status: "Draft",
+      status: currentWineRef.current?.status === "ready" || currentWineRef.current?.status === "processing" ? currentWineRef.current.status : "Draft",
       tone: captureTone,
       audio: audioCaptured,
       photo: photoCaptured,
     });
-  }, [audioCaptured, captureTone, captureWineId, name, note, onAutoSaveDraft, photoCaptured, reaction, varietal, wineType]);
+  }, [audioCaptured, captureTone, captureWineId, name, note, onAutoSaveDraft, photoCaptured, rating, reaction, varietal, wineType]);
   return (
     <div className="modal-backdrop" onClick={saveDraft}>
       <div
@@ -467,10 +515,10 @@ function CaptureSheet({
             </h2>
           </div>
           <button className="close-button" aria-label="Save draft and close capture" onClick={saveDraft}>
-            x
+            ×
           </button>
         </div>
-        <p className="recording-reminder">Make sure people are comfortable being recorded. Your recording is kept private and used only to organise this wine.</p>
+        <p className="recording-reminder">Record the host describing the wine. Kept will use the presentation to fill in the details for you.</p>
         <div className="capture-actions">
           <button
             className={`capture-action ${recording ? "recording" : ""}`}
@@ -484,18 +532,18 @@ function CaptureSheet({
                 {recording
                   ? "Stop recording"
                   : audioCaptured
-                    ? "Voice note saved"
-                    : "Keep a voice note"}
+                    ? "Wine details recorded"
+                    : "Record wine details"}
               </strong>
               <small>
                 {recording
                   ? `Recording - ${Math.floor(recordingSeconds / 60)}:${String(recordingSeconds % 60).padStart(2, "0")}`
                   : audioCaptured
                     ? "Kept. We’re filling in the details."
-                    : "A few words, in your own voice"}
+                    : "Capture the host’s wine presentation"}
               </small>
             </span>
-            <span className="action-arrow">{recording ? "O" : "->"}</span>
+            <span className={`action-arrow ${recording ? "recording-stop" : ""}`}>{recording ? "■" : "→"}</span>
           </button>
           <button
             className="capture-action"
@@ -551,6 +599,14 @@ function CaptureSheet({
             </select>
           </label>
         </div>
+        <div className="capture-rating">
+          <p className="reaction-label">Rate this wine <small>Optional</small></p>
+          <div className="star-row" aria-label="Rate wine out of 5 stars">
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button key={value} className={rating >= value ? "star active" : "star"} aria-label={`${value} out of 5 stars`} onClick={() => setRating(value)}>★</button>
+            ))}
+          </div>
+        </div>
         {captureMessage && <p className="form-message" role="status">{captureMessage}</p>}
         <p className="reaction-label">How did it land?</p>
         <div className="reaction-grid">
@@ -573,16 +629,6 @@ function CaptureSheet({
         <button className="primary-button" disabled={!reaction} onClick={save}>
           Keep this pour <Icon name="arrow" />
         </button>
-        {(audioCaptured || photoCaptured) && (
-          <>
-            <p className="saved-note">
-              <span className="sync-dot" /> Your private media will help organise this wine.
-            </p>
-            <p className="retention-note">
-              {retainAudio ? "Your original recording will stay in your journal." : "Original recordings may be removed after processing. You can keep them in Me."}
-            </p>
-          </>
-        )}
       </div>
     </div>
   );
@@ -661,7 +707,9 @@ export default function WineDashboard() {
   const [startChooserOpen, setStartChooserOpen] = useState(false);
   const [fullTastingOpen, setFullTastingOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [startDateTime, setStartDateTime] = useState(() => new Date().toISOString().slice(0, 16));
+  const [tastingFarm, setTastingFarm] = useState<Farm>();
+  const [tastingFarmSearch, setTastingFarmSearch] = useState("");
+  const [tastingFarmResults, setTastingFarmResults] = useState<FarmSearchResult[]>([]);
   const [captureOpen, setCaptureOpen] = useState(false);
   const [captureDraft, setCaptureDraft] = useState<Wine>();
   const [endOpen, setEndOpen] = useState(false);
@@ -718,6 +766,8 @@ export default function WineDashboard() {
   const [cloudSyncError, setCloudSyncError] = useState(false);
   const [authUserId, setAuthUserId] = useState("device");
   const syncedCloudAccounts = useRef(new Set<string>());
+  const deletedExperienceIds = useRef(new Set<string>());
+  const emptyExperienceCleanupIds = useRef(new Set<string>());
   const storageKey = `my-wine-experience:${authUserId}`;
   const historyFarms = useMemo(() => experiences
     .filter((experience) => !farms.some((farm) => farm.name.toLowerCase() === experience.farmName.toLowerCase()))
@@ -839,6 +889,19 @@ export default function WineDashboard() {
       .catch(() => setSearchResults([]));
     return () => controller.abort();
   }, [search]);
+  useEffect(() => {
+    const query = tastingFarmSearch.trim();
+    if (query.length < 2) {
+      setTastingFarmResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    void fetch(`/api/farms/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() as Promise<{ farms?: FarmSearchResult[] }> : Promise.reject(new Error("Farm search failed")))
+      .then((data) => setTastingFarmResults(data.farms ?? []))
+      .catch(() => setTastingFarmResults([]));
+    return () => controller.abort();
+  }, [tastingFarmSearch]);
   // Hydration restores persisted device state once on mount.
   useEffect(() => {
     try {
@@ -858,7 +921,7 @@ export default function WineDashboard() {
         setExperienceStartedAt(saved.experienceStartedAt);
         setExperienceLocation(saved.experienceLocation);
         setWines(saved.wines?.length ? saved.wines : initialWines);
-        setExperiences(saved.experiences ?? []);
+        setExperiences((saved.experiences ?? []).filter((item: ExperienceSummary) => !isStaleEmptyHomeExperience(item)));
         setKeepAudio(Boolean(saved.keepAudio));
       } else {
         setPersonalFarms([]);
@@ -914,51 +977,71 @@ export default function WineDashboard() {
     let unsubscribe: (() => void) | undefined;
     try {
       unsubscribe = subscribeExperiences(authUserId, (items) => {
+        const cloudItems: ExperienceSummary[] = items.map((item) => ({
+          id: item.id,
+          farmName: item.farmName,
+          town: item.farmTown ?? "Western Cape",
+          startedAt: new Date(item.startedAt).toISOString(),
+          rating: item.overallRating ?? 0,
+          wineCount: item.wineCount,
+          experienceType: item.experienceType,
+          note: item.note,
+          photo: Boolean(item.photoPath),
+          photoPath: item.photoPath,
+          wines: item.wines?.map((wine) => ({
+            id: Number(wine.id) || 0,
+            name: wine.name,
+            confirmedName: wine.confirmedName,
+            note: wine.note,
+            rating: wine.rating,
+            wineType: wine.wineType,
+            varietal: wine.varietal,
+            captureMode: wine.captureMode,
+            detail: wine.detail ?? wine.status,
+            reaction: wine.reaction,
+            status: wine.status,
+            error: wine.error,
+            tone: "gold",
+            audio: Boolean(wine.audioPath),
+            photo: Boolean(wine.photoPath),
+            audioPath: wine.audioPath,
+            photoPath: wine.photoPath,
+            transcript: wine.transcript,
+            summary: wine.summary,
+            suggestedIdentity: wine.suggestedIdentity,
+            suggestionStatus: wine.suggestionStatus,
+            reflections: wine.reflections?.map((reflection) => ({
+              id: reflection.id,
+              note: reflection.note,
+              type: reflection.type,
+              reaction: reflection.reaction,
+              createdAt: new Date(reflection.createdAt).toISOString(),
+            })),
+          })),
+        }));
+
+        for (const item of cloudItems.filter(isStaleEmptyHomeExperience)) {
+          if (emptyExperienceCleanupIds.current.has(item.id)) continue;
+          emptyExperienceCleanupIds.current.add(item.id);
+          deletedExperienceIds.current.add(item.id);
+          void deleteCloudExperience(authUserId, item.id).catch(() => {
+            emptyExperienceCleanupIds.current.delete(item.id);
+            deletedExperienceIds.current.delete(item.id);
+            setCloudSyncError(true);
+          });
+        }
+
+        const visibleCloudItems = cloudItems.filter((item) =>
+          !isStaleEmptyHomeExperience(item) && !deletedExperienceIds.current.has(item.id));
         setExperiences((current) => {
-          const cloudItems = items.map((item) => ({
-                id: item.id,
-                farmName: item.farmName,
-                 town: item.farmTown ?? "Western Cape",
-                startedAt: new Date(item.startedAt).toISOString(),
-                rating: item.overallRating ?? 0,
-                wineCount: item.wineCount,
-                experienceType: item.experienceType,
-                note: item.note,
-                photo: Boolean(item.photoPath),
-                photoPath: item.photoPath,
-                wines: item.wines?.map((wine) => ({
-                  id: Number(wine.id) || 0,
-                  name: wine.name,
-                  confirmedName: wine.confirmedName,
-                  note: wine.note,
-                  rating: wine.rating,
-                  wineType: wine.wineType,
-                  varietal: wine.varietal,
-                  captureMode: wine.captureMode,
-                  detail: wine.detail ?? wine.status,
-                  reaction: wine.reaction,
-                  status: wine.status,
-                  error: wine.error,
-                  tone: "gold",
-                  audio: Boolean(wine.audioPath),
-                  photo: Boolean(wine.photoPath),
-                  audioPath: wine.audioPath,
-                  photoPath: wine.photoPath,
-                  transcript: wine.transcript,
-                  summary: wine.summary,
-                  suggestedIdentity: wine.suggestedIdentity,
-                  suggestionStatus: wine.suggestionStatus,
-                  reflections: wine.reflections?.map((reflection) => ({
-                    id: reflection.id,
-                    note: reflection.note,
-                    type: reflection.type,
-                    reaction: reflection.reaction,
-                    createdAt: new Date(reflection.createdAt).toISOString(),
-                  })),
-                })),
-          }));
-          const cloudIds = new Set(cloudItems.map((item) => item.id));
-          return [...cloudItems, ...current.filter((item) => !cloudIds.has(item.id))];
+          const cloudIds = new Set(visibleCloudItems.map((item) => item.id));
+          return [
+            ...visibleCloudItems,
+            ...current.filter((item) =>
+              !cloudIds.has(item.id)
+              && !deletedExperienceIds.current.has(item.id)
+              && !isStaleEmptyHomeExperience(item)),
+          ];
         });
       }, () => setCloudSyncError(true));
     } catch {
@@ -978,6 +1061,25 @@ export default function WineDashboard() {
       syncedCloudAccounts.current.delete(authUserId);
     });
   }, [authUserId, experiences, hydrated]);
+  useEffect(() => {
+    if (!experience || !activeExperienceId) return;
+    const cloudWines = experiences.find((item) => item.id === activeExperienceId)?.wines;
+    if (!cloudWines?.length) return;
+    setWines((current) => current.map((localWine) => {
+      const cloudWine = cloudWines.find((item) => item.id === localWine.id);
+      if (!cloudWine) return localWine;
+      return {
+        ...localWine,
+        ...cloudWine,
+        reaction: cloudWine.reaction ?? localWine.reaction,
+        rating: cloudWine.rating ?? localWine.rating,
+        note: cloudWine.note ?? localWine.note,
+        name: cloudWine.confirmedName || cloudWine.suggestedIdentity?.name || cloudWine.name || localWine.name,
+        wineType: cloudWine.wineType ?? localWine.wineType,
+        varietal: wineVarietal(cloudWine) || localWine.varietal,
+      };
+    }));
+  }, [activeExperienceId, experience, experiences]);
   useEffect(() => {
     const sync = () => {
       const userId = auth?.currentUser?.uid;
@@ -1017,6 +1119,12 @@ export default function WineDashboard() {
     setPersonalFarms((current) => current.some((item) => item.name.toLowerCase() === farm.name.toLowerCase()) ? current : [...current, farm]);
     setSelectedFarm(farm);
   }
+  function openTastingSetup(farm?: Farm) {
+    setTastingFarm(farm);
+    setTastingFarmSearch(farm?.name ?? "");
+    setTastingFarmResults([]);
+    setFullTastingOpen(true);
+  }
   async function attachUnassignedMedia() {
     const uid = auth?.currentUser?.uid;
     if (!uid) return;
@@ -1029,9 +1137,11 @@ export default function WineDashboard() {
     await uploadQueuedMedia(uid);
   }
   function begin() {
+    if (!tastingFarm) return;
     const experienceId = crypto.randomUUID();
-    const startedAt = startDateTime ? new Date(startDateTime).toISOString() : new Date().toISOString();
+    const startedAt = new Date().toISOString();
     const uid = auth?.currentUser?.uid;
+    setSelectedFarm(tastingFarm);
     setFullTastingOpen(false);
     setActiveExperienceId(experienceId);
     setExperienceStartedAt(startedAt);
@@ -1075,10 +1185,10 @@ export default function WineDashboard() {
       void saveCloudExperience({
         id: experienceId,
         userId: uid,
-        farmId: selectedFarm.name.toLowerCase().replaceAll(" ", "-"),
-        farmName: selectedFarm.name,
-        farmTown: selectedFarm.town,
-        farmNote: selectedFarm.note,
+        farmId: tastingFarm.name.toLowerCase().replaceAll(" ", "-"),
+        farmName: tastingFarm.name,
+        farmTown: tastingFarm.town,
+        farmNote: tastingFarm.note,
         startedAt: Date.parse(startedAt),
         status: "active",
         wineCount: 0,
@@ -1086,10 +1196,11 @@ export default function WineDashboard() {
     }
     trackEvent("experience_started", { online: navigator.onLine });
   }
-  function persistActiveWine(wine: Wine, wineCount: number) {
+  async function persistActiveWine(wine: Wine, wineCount: number) {
     const uid = auth?.currentUser?.uid;
     if (!uid || !firebaseEnabled || !activeExperienceId) return;
-    void Promise.all([
+    try {
+      await Promise.all([
       saveCloudExperience({
         id: activeExperienceId,
         userId: uid,
@@ -1119,15 +1230,18 @@ export default function WineDashboard() {
         photoPath: wine.photoPath,
         createdAt: Date.now(),
       }),
-    ]).then(async () => {
+      ]);
       setCloudSyncError(false);
       await uploadQueuedMedia(uid);
-    }).catch(() => setCloudSyncError(true));
+    } catch {
+      setCloudSyncError(true);
+      throw new Error("Wine sync failed");
+    }
   }
   function saveWine(wine: Wine) {
     const nextWines = wines.some((item) => item.id === wine.id) ? wines.map((item) => item.id === wine.id ? wine : item) : [...wines, wine];
     setWines(nextWines);
-    persistActiveWine(wine, nextWines.length);
+    void persistActiveWine(wine, nextWines.length);
     setCaptureDraft(undefined);
     setCaptureOpen(false);
     trackEvent("wine_saved", { kind: wine.audio || wine.photo ? "media" : "manual", online: navigator.onLine });
@@ -1181,15 +1295,18 @@ export default function WineDashboard() {
   const updateWineDraft = useCallback((wine: Wine) => {
     setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
   }, []);
+  async function processWineDraft(wine: Wine) {
+    setWines((current) => current.some((item) => item.id === wine.id) ? current.map((item) => item.id === wine.id ? wine : item) : [...current, wine]);
+    await persistActiveWine(wine, Math.max(wines.length, wine.id));
+  }
   function saveWineDraft(wine: Wine) {
     const nextWines = wines.some((item) => item.id === wine.id) ? wines.map((item) => item.id === wine.id ? wine : item) : [...wines, wine];
     setWines(nextWines);
-    persistActiveWine(wine, nextWines.length);
+    void persistActiveWine(wine, nextWines.length);
     setCaptureDraft(undefined);
     setCaptureOpen(false);
   }
   function finish() {
-    if (!rating) return;
     const summary = {
       id: activeExperienceId || crypto.randomUUID(),
       farmName: selectedFarm.name,
@@ -1403,10 +1520,12 @@ export default function WineDashboard() {
   async function removeExperience(summary: ExperienceSummary) {
     setDeleteError(undefined);
     const uid = auth?.currentUser?.uid;
+    deletedExperienceIds.current.add(summary.id);
     try {
       if (uid && firebaseEnabled) await deleteCloudExperience(uid, summary.id);
       await removeQueuedMediaForExperience(summary.id);
     } catch {
+      deletedExperienceIds.current.delete(summary.id);
       setDeleteError("We could not remove everything yet. Check your connection and try again.");
       return;
     }
@@ -1416,25 +1535,49 @@ export default function WineDashboard() {
     setConfirmDeleteId(undefined);
   }
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${experience ? "app-shell-tasting" : `app-shell-${tab}`}`}>
       <header className="topbar">
         <div className="brand-mark">
           <span>Kept</span>
           <span>Wine memories, kept close</span>
         </div>
         <div className="topbar-right">
-            <span className="sync-dot" /> <span>{cloudSyncError ? "Saved on this device — cloud sync needs retry" : mediaQueue.unassigned ? `${mediaQueue.unassigned} media ready to attach` : mediaQueue.failed ? `${mediaQueue.failed} media needs retry` : mediaQueue.waiting ? `${mediaQueue.waiting} media waiting to upload` : isOnline ? "Ready to sync" : "Offline - saved on this device"}</span>
+            <span>{cloudSyncError ? "Saved on this device — cloud sync needs retry" : mediaQueue.unassigned ? `${mediaQueue.unassigned} media ready to attach` : mediaQueue.failed ? `${mediaQueue.failed} media needs retry` : mediaQueue.waiting ? `${mediaQueue.waiting} media waiting to upload` : isOnline ? "Ready to sync" : "Offline - saved on this device"}</span>
            <button className="avatar" aria-label="Open profile" onClick={() => setTab("profile")}>T</button>
         </div>
       </header>
-      <section className={`page-content page-content-${tab}`}>
-        {tab === "map" && (
-          <>
-            <div className="page-heading">
+      <section className={`page-content ${experience ? "page-content-tasting" : `page-content-${tab}`}`}>
+        {experience && (
+          <div className="tasting-workspace">
+            <div className="tasting-workspace-header">
               <div>
-                <p className="eyebrow">WESTERN CAPE - 05 OCTOBER 2026</p>
+                <p className="eyebrow">TASTING IN PROGRESS</p>
+                <h1>{selectedFarm.name}</h1>
+                <p>{selectedFarm.town} · {wines.length} {wines.length === 1 ? "wine" : "wines"} kept</p>
               </div>
+              <button className="text-button" onClick={() => setEndOpen(true)}>End tasting</button>
             </div>
+            <div className="tasting-wine-list">
+              {wines.map((wine, index) => (
+                <button className="tasting-wine-card" key={wine.id} onClick={() => { setCaptureDraft(wine); setCaptureOpen(true); }}>
+                  <span className="wine-number">{index + 1}</span>
+                  <div>
+                    <strong>{wine.name}</strong>
+                    <small>{[wineTypeLabel(wine.wineType), wineVarietal(wine), reactionLabel(wine.reaction)].filter(Boolean).join(" · ") || "Details can be added whenever you’re ready"}</small>
+                  </div>
+                  <span className="processing-status">{wine.status === "ready" ? "Ready" : wine.status}</span>
+                </button>
+              ))}
+              {!wines.length && <div className="tasting-empty"><h2>Ready for the first pour.</h2><p>Record the host, add a bottle photo, or keep only your reaction.</p></div>}
+            </div>
+            <div className="tasting-actions">
+              <button className="primary-button" onClick={() => { setCaptureDraft(undefined); setCaptureOpen(true); }} disabled={wines.length >= 7}><Icon name="plus" /> Add wine</button>
+              <p>{cloudSyncError ? "Saved here. Sync will retry." : mediaQueue.waiting ? "Filling in captured details…" : "Everything is kept."}</p>
+            </div>
+          </div>
+        )}
+        {!experience && tab === "map" && (
+          <>
             <div className="map-card">
               <div className="map-toolbar">
                 <div className="search-field">
@@ -1442,7 +1585,7 @@ export default function WineDashboard() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search places or towns"
+                    placeholder="Search places"
                   />
                 </div>
                 <button
@@ -1489,14 +1632,14 @@ export default function WineDashboard() {
                   <p className="muted">
                     {selectedFarm.town} - {selectedFarm.note}{selectedFarmHistory?.visits ? ` - ${selectedFarmHistory.visits} visit${selectedFarmHistory.visits === 1 ? "" : "s"}` : ""}
                   </p>
-                  {selectedFarmLatestRating ? <p className="farm-history-detail">Latest feeling: {"*".repeat(selectedFarmLatestRating)}</p> : null}
+                  {selectedFarmLatestRating ? <p className="farm-history-detail">Latest feeling: <span className="wine-stars" aria-label={`${selectedFarmLatestRating} out of 5 stars`}>{"★".repeat(selectedFarmLatestRating)}</span></p> : null}
                   {selectedFarmLovedWines.length ? <p className="farm-history-detail">Worth revisiting: {selectedFarmLovedWines.join(", ")}</p> : null}
                   {selectedFarmHistory?.visited && <button className="text-button" onClick={() => { setJournalSearch(selectedFarm.name); setTab("journal"); }}>Open memories <Icon name="arrow" /></button>}
                 </div>
                 <button
                   className="round-arrow"
                   aria-label={`Start an experience at ${selectedFarm.name}`}
-                  onClick={() => setFullTastingOpen(true)}
+                  onClick={() => openTastingSetup(selectedFarm)}
                 >
                   <Icon name="arrow" />
                 </button>
@@ -1504,7 +1647,7 @@ export default function WineDashboard() {
             </div>
           </>
         )}
-        {tab === "journal" && (
+        {!experience && tab === "journal" && (
           <div className="list-view">
             <div className="search-control-row">
               <div className="search-field journal-search">
@@ -1588,12 +1731,12 @@ export default function WineDashboard() {
                 <p className="eyebrow">YOUR FIRST MEMORY</p>
                 <h2>Start with a bottle or place you want to keep.</h2>
                 <p className="muted">Your places, bottles, and small details will stay here for whenever you want to return.</p>
-                <button className="primary-button" onClick={() => setFullTastingOpen(true)}>Keep a tasting <Icon name="arrow" /></button>
+                <button className="primary-button" onClick={() => openTastingSetup()}>Keep a tasting <Icon name="arrow" /></button>
               </div>
             )}
           </div>
         )}
-        {tab === "favourites" && (
+        {!experience && tab === "favourites" && (
           <div className="list-view">
             <div className="search-control-row">
               <div className="search-field favourites-search">
@@ -1648,7 +1791,7 @@ export default function WineDashboard() {
             )}
           </div>
         )}
-        {tab === "profile" && (
+        {!experience && tab === "profile" && (
           <div className="list-view profile-view">
             <div className="account-status">
               <div>
@@ -1684,46 +1827,7 @@ export default function WineDashboard() {
           </div>
         )}
       </section>
-      {experience && (
-        <section className="active-experience-panel" aria-label="Active wine tasting">
-          <div className="active-experience-heading">
-            <div>
-              <p className="eyebrow">WINE LIST</p>
-              <h2>{wines.length ? `${wines.length} of 7 wines` : "Wine 1 - ready when the first pour arrives"}</h2>
-            </div>
-            <span className="sync-status">{cloudSyncError ? "Saved on this device — sync needs retry" : mediaQueue.failed ? `${mediaQueue.failed} need retry` : mediaQueue.waiting ? `${mediaQueue.waiting} waiting` : isOnline ? "Ready to sync" : "Saved on this device"}</span>
-          </div>
-          {wines.map((wine, index) => (
-            <button className="active-wine-row" key={wine.id} onClick={() => { if (wine.status === "Draft") { setCaptureDraft(wine); setCaptureOpen(true); } }} disabled={wine.status !== "Draft"}>
-              <span className="wine-number">{index + 1}</span>
-              <div><strong>{wine.name}</strong><small>{wine.reaction ?? "Choose a reaction"}</small></div>
-              <span className="processing-status">{wine.status}</span>
-            </button>
-          ))}
-          {wines.some((wine) => wine.status === "Draft") && <p className="muted">Drafts are saved on this device. Tap a draft to finish it.</p>}
-          {wines.length >= 7 && <p className="muted">Seven wines captured. You can still edit existing entries.</p>}
-        </section>
-      )}
-      {experience && (
-        <section className="experience-bar">
-          <div>
-            <p className="eyebrow">
-              ACTIVE EXPERIENCE - {selectedFarm.name.toUpperCase()}
-            </p>
-            <strong>{wines.length} wines captured</strong>
-          </div>
-          <button className="end-link" onClick={() => setEndOpen(true)}>
-            End
-          </button>
-          <button
-            onClick={() => setCaptureOpen(true)}
-            disabled={wines.length >= 7}
-          >
-            <Icon name="plus" /> Add wine
-          </button>
-        </section>
-      )}
-      <nav className="bottom-nav">
+      {!experience && <nav className="bottom-nav">
         <div className="bottom-nav-items">
           {(
             [
@@ -1746,41 +1850,57 @@ export default function WineDashboard() {
             </button>
           ))}
         </div>
-      </nav>
+      </nav>}
       {startChooserOpen && (
         <div className="modal-backdrop" onClick={() => setStartChooserOpen(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
             <h2 id="start-sheet-title">What would you like to <em>keep?</em></h2>
             <button className="primary-button chooser-button" onClick={() => { setStartChooserOpen(false); setQuickAddOpen(true); }}>Keep a bottle <Icon name="arrow" /></button>
-            <button className="text-button chooser-secondary" onClick={() => { setStartChooserOpen(false); setFullTastingOpen(true); }}>Start a tasting <Icon name="arrow" /></button>
+            <button className="text-button chooser-secondary" onClick={() => { setStartChooserOpen(false); openTastingSetup(); }}>Start a tasting <Icon name="arrow" /></button>
           </div>
         </div>
       )}
       {fullTastingOpen && (
         <div className="modal-backdrop" onClick={() => setFullTastingOpen(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
+          <div className="sheet tasting-setup-sheet" role="dialog" aria-modal="true" aria-labelledby="start-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
             <p className="eyebrow">KEEP A TASTING</p>
             <h2 id="start-sheet-title">Where are you <em>today?</em></h2>
-            <div className="selected-farm">
-              <div className="farm-icon">F</div>
-              <div>
-                <strong>{selectedFarm.name}</strong>
-                <p>{selectedFarm.town}, Western Cape</p>
+            {tastingFarm ? (
+              <div className="selected-farm">
+                <div className="farm-icon"><Icon name="map" /></div>
+                <div>
+                  <strong>{tastingFarm.name}</strong>
+                  <p>{tastingFarm.town}</p>
+                </div>
+                <button onClick={() => { setTastingFarm(undefined); setTastingFarmSearch(""); }}>Change farm</button>
               </div>
-              <button onClick={() => setFullTastingOpen(false)}>Change farm</button>
-            </div>
-            <label className="name-input setup-datetime">
-              <span>DATE &amp; TIME</span>
-              <input
-                type="datetime-local"
-                value={startDateTime}
-                onChange={(event) => setStartDateTime(event.target.value)}
-              />
-            </label>
+            ) : (
+              <div className="tasting-farm-picker">
+                <label className="name-input">
+                  <span>FARM OR TASTING ROOM</span>
+                  <input autoFocus value={tastingFarmSearch} onChange={(event) => setTastingFarmSearch(event.target.value)} placeholder="Search where you are" />
+                </label>
+                <div className="tasting-farm-results">
+                  {(tastingFarmSearch.trim().length < 2 ? allFarms.slice(0, 5).map((farm) => ({ id: farm.name, name: farm.name, town: farm.town, province: "Western Cape", source: "local", location: farm.location })) : tastingFarmResults).slice(0, 6).map((result) => (
+                    <button key={result.id} onClick={() => {
+                      const farm = allFarms.find((item) => item.name.toLowerCase() === result.name.toLowerCase()) ?? makePersonalFarm(result.name, result.town, "Tasting room", result.location);
+                      rememberFarm(farm);
+                      setTastingFarm(farm);
+                      setTastingFarmResults([]);
+                    }}><strong>{result.name}</strong><small>{result.town}</small></button>
+                  ))}
+                  {tastingFarmSearch.trim().length >= 2 && tastingFarmResults.length === 0 && <button onClick={() => {
+                    const farm = makePersonalFarm(tastingFarmSearch.trim(), "Western Cape", "Private tasting place");
+                    rememberFarm(farm);
+                    setTastingFarm(farm);
+                  }}><strong>Use “{tastingFarmSearch.trim()}”</strong><small>Keep this as a private place</small></button>}
+                </div>
+              </div>
+            )}
             <p className="reassurance">Keep the feeling first. Details can come later.</p>
-            <button className="primary-button" onClick={begin}>
+            <button className="primary-button" disabled={!tastingFarm} onClick={begin}>
               Begin keeping <Icon name="arrow" />
             </button>
           </div>
@@ -1797,11 +1917,12 @@ export default function WineDashboard() {
           onSave={saveWine}
           onSaveDraft={saveWineDraft}
           onAutoSaveDraft={updateWineDraft}
+          onProcessDraft={processWineDraft}
         />
       )}
       {endOpen && (
         <div className="modal-backdrop" onClick={() => setEndOpen(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="end-sheet-title" onClick={(event) => event.stopPropagation()}>
+          <div className="sheet end-sheet" role="dialog" aria-modal="true" aria-labelledby="end-sheet-title" onClick={(event) => event.stopPropagation()}>
             <div className="sheet-handle" />
             <p className="eyebrow">KEEP THE DAY</p>
             <h2 id="end-sheet-title">
@@ -1813,6 +1934,7 @@ export default function WineDashboard() {
               <div><strong>{wines.filter((wine) => wine.status === "Waiting to upload" || wine.status === "Processing").length}</strong><span>filling in details</span></div>
             </div>
             <p className="muted">Your memory is kept before any background details are filled in.</p>
+            <p className="reaction-label">Overall tasting <small>Optional</small></p>
             <div className="star-row">
               {[1, 2, 3, 4, 5].map((value) => (
                   <button
@@ -1821,7 +1943,7 @@ export default function WineDashboard() {
                   key={value}
                   onClick={() => setRating(value)}
                 >
-                  *
+                  ★
                 </button>
               ))}
             </div>
@@ -1829,12 +1951,11 @@ export default function WineDashboard() {
               className="farm-note"
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="What made it stay with you?"
+              placeholder="What stayed with you? (optional)"
             />
             {wines.some((wine) => wine.status === "Draft") && <p className="muted">You have {wines.filter((wine) => wine.status === "Draft").length} unfinished draft{wines.filter((wine) => wine.status === "Draft").length === 1 ? "" : "s"}. They will stay saved on this device.</p>}
             <button
               className="primary-button"
-              disabled={!rating}
               onClick={finish}
             >
               Keep for later <Icon name="arrow" />
@@ -1848,7 +1969,7 @@ export default function WineDashboard() {
             <div className="sheet-handle" />
             <p className="eyebrow">KEPT FOR LATER</p>
             <h2 id="saved-sheet-title">Your memory is <em>kept.</em></h2>
-            <p className="muted">{savedExperience.wineCount} {savedExperience.wineCount === 1 ? "bottle" : "bottles"} kept at {savedExperience.farmName}. Any photo or voice note will quietly fill in the details.</p>
+            <p className="muted">{savedExperience.wineCount} {savedExperience.wineCount === 1 ? "bottle" : "bottles"} kept at {savedExperience.farmName}. Any photo or recording will quietly fill in the details.</p>
             <div className="receipt-actions">
               <button className="primary-button" onClick={() => { setSelectedExperience(savedExperience); setSavedExperience(undefined); }}>View memory <Icon name="arrow" /></button>
               <input ref={experiencePhotoInput} className="visually-hidden" type="file" accept="image/*" capture="environment" onChange={addExperiencePhoto} />

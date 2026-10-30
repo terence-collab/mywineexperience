@@ -10,6 +10,11 @@ type GoogleNamespace = { maps: { Map: new (element: HTMLElement, options: Record
 
 let mapsLoader: Promise<GoogleNamespace | null> | undefined;
 
+function wineBottleMarker(color: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="42" viewBox="0 0 28 42"><rect x="10" y="1" width="8" height="5" rx="1.5" fill="#b98216"/><path d="M10 6h8v7c0 2 1.2 3.8 3.2 5.6 2.4 2.2 3.8 5.2 3.8 8.5V36c0 3.3-2.7 6-6 6H9c-3.3 0-6-2.7-6-6v-8.9c0-3.3 1.4-6.3 3.8-8.5C8.8 16.8 10 15 10 13V6Z" fill="${color}"/><rect x="7" y="24" width="14" height="10" rx="2" fill="#fffdf8" opacity=".92"/><path d="M10 28h8M11 31h6" stroke="${color}" stroke-width="1.3" stroke-linecap="round"/></svg>`;
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}` };
+}
+
 function loadGoogleMaps(apiKey: string) {
   if (mapsLoader) return mapsLoader;
   mapsLoader = new Promise((resolve) => {
@@ -82,7 +87,7 @@ export function GoogleMapSurface({ farms, selectedFarm, onSelect }: { farms: Map
     markersRef.current = farms.filter((farm) => farm.location).map((farm) => {
       const marker = new google.maps.Marker({
         map: mapRef.current, position: { lat: farm.location!.latitude, lng: farm.location!.longitude }, title: farm.name,
-        label: { text: "●", color: farm.favourite ? "#713247" : "#8d9678", fontSize: "24px" },
+        icon: wineBottleMarker(farm.favourite ? "#713247" : farm.visited ? "#8d9678" : "#7a3e48"),
       });
       marker.addListener("click", () => onSelectRef.current(farm));
       return marker;

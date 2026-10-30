@@ -12,10 +12,10 @@ test("product surface contains the core tasting loop", async () => {
   const authenticatedApp = await read("app/app/page.tsx");
   assert.match(page, /Begin keeping/);
   assert.match(page, /Change farm/);
-  assert.match(page, /DATE &amp; TIME/);
-  assert.match(page, /datetime-local/);
-  assert.match(page, /Keep a voice note/);
-  assert.match(page, /Make sure people are comfortable being recorded/);
+  assert.doesNotMatch(page, /DATE &amp; TIME/);
+  assert.doesNotMatch(page, /datetime-local/);
+  assert.match(page, /Record wine details/);
+  assert.match(page, /Capture the host’s wine presentation/);
   assert.match(page, /Photograph the bottle/);
   assert.match(page, /Loved it/);
   assert.match(page, /Liked it/);
@@ -37,7 +37,7 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /Looks right/);
   assert.match(page, /Leave for later/);
   assert.match(page, /saveDraft/);
-  assert.match(page, /Tap a draft to finish it/);
+  assert.match(page, /TASTING IN PROGRESS/);
   assert.match(page, /Retry media uploads/);
   assert.match(page, /We could not organise this capture yet/);
   assert.match(page, /Retry organisation/);
@@ -59,6 +59,8 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /wineSearchText/);
   assert.match(page, /trackEvent\("experience_started"/);
   assert.match(page, /Open memories/);
+  assert.match(page, /Search places/);
+  assert.match(page, /Latest feeling:[\s\S]{0,180}★/);
   assert.match(page, /Latest feeling/);
   assert.match(page, /Worth revisiting:/);
   assert.match(page, /Open farm in Maps/);
@@ -68,6 +70,9 @@ test("product surface contains the core tasting loop", async () => {
   assert.match(page, /makePersonalFarm/);
   assert.match(page, /experienceStartedAt/);
   assert.match(page, /const \[captureWineId\] = useState/);
+  assert.match(page, /isStaleEmptyHomeExperience/);
+  assert.match(page, /deletedExperienceIds\.current\.add\(summary\.id\)/);
+  assert.match(await read("app/globals.css"), /\.journal-card-button \{ width: 100%; min-width: 0; \}/);
   assert.doesNotMatch(page, /onAutoSaveDraft[\s\S]{0,1200}wines\.length\]\);/);
   assert.match(await read("lib/auth.ts"), /sendPasswordlessLink/);
   assert.match(await read("lib/auth.ts"), /GoogleAuthProvider/);
@@ -107,6 +112,7 @@ test("cloud boundaries and privacy artifacts are present", async () => {
   assert.match(farms, /X-Goog-FieldMask/);
   assert.match(farms, /fallbackFarms/);
   assert.match(await read("components/google-map-surface.tsx"), /NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY/);
+  assert.match(await read("components/google-map-surface.tsx"), /wineBottleMarker/);
   assert.match(firestore, /request\.auth\.uid/);
   assert.match(firestore, /validRating/);
   assert.match(firestore, /validExperience/);
