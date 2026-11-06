@@ -4,7 +4,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function owns(data) { return signedIn() && data.userId == request.auth.uid; }
-    function validReaction(value) { return value == 'Loved it' || value == 'Liked it' || value == 'Not for me'; }
+    function validReaction(value) {
+      return value == 'pour_again' || value == 'glad_tried' || value == 'not_for_me'
+        || value == 'Loved it' || value == 'Liked it' || value == 'Not for me';
+    }
     function validRating(value) { return value is int && value >= 1 && value <= 5; }
     function validWineType(value) { return value == 'red' || value == 'white' || value == 'sparkling' || value == 'rosé' || value == 'fortified' || value == 'dessert' || value == 'other'; }
     function validExperience(data) {
@@ -88,6 +91,31 @@ service cloud.firestore {
     match /farms/{farmId} {
       allow read: if signedIn();
       allow write: if false;
+    }
+
+    match /orders/{document=**} { allow read, write: if false; }
+    match /quoteRequests/{document=**} { allow read, write: if false; }
+    match /customers/{document=**} { allow read, write: if false; }
+    match /communications/{document=**} { allow read, write: if false; }
+    match /emailOutbox/{document=**} { allow read, write: if false; }
+    match /payments/{document=**} { allow read, write: if false; }
+    match /refunds/{document=**} { allow read, write: if false; }
+    match /refundReservations/{document=**} { allow read, write: if false; }
+    match /catalogProducts/{document=**} { allow read, write: if false; }
+    match /catalogRollOptions/{document=**} { allow read, write: if false; }
+    match /businessSettings/{document=**} { allow read, write: if false; }
+    match /messageTemplates/{document=**} { allow read, write: if false; }
+    match /serviceCredentials/{document=**} { allow read, write: if false; }
+    match /auditEvents/{document=**} { allow read, write: if false; }
+
+    // Owner-scoped collection-group queries keep journal hydration bounded to
+    // one wines listener and one second-thought listener per signed-in user.
+    match /{path=**}/wines/{wineId} {
+      allow list: if owns(resource.data);
+    }
+
+    match /{path=**}/reflections/{reflectionId} {
+      allow list: if owns(resource.data);
     }
   }
 }

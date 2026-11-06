@@ -14,6 +14,9 @@
   "auth": {
     "authorizedDomains": [
       "localhost",
+      "fableandfold.co.za",
+      "www.fableandfold.co.za",
+      "fable-fold.vercel.app",
       "mywineexperience.vercel.app",
       "mywineexperience-terences-projects-81a76a73.vercel.app",
       "mywineexperience-git-master-terences-projects-81a76a73.vercel.app"
